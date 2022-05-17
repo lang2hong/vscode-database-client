@@ -1,10 +1,11 @@
 <template>
   <div id="app">
-    <div class="hint">
-      <div style="width:95%;">
-        <el-input type="textarea" :autosize="{ minRows:2, maxRows:5}" v-model="toolbar.sql" class="sql-pannel" @keypress.native="panelInput" />
+    <div class="hint" ref="hint">
+      <el-image v-if="result.showUgly" style="width: 225px; height: 300px" :src="result.uglyPath"></el-image>
+      <div style="width:100%;">
+        <el-input type="textarea" :autosize="{ minRows:1, maxRows:6}" v-model="toolbar.sql" :style="{fontFamily:result.fontFamily,fontSize:result.fontSize+'px'}" class="sql-pannel" @keypress.native="panelInput" />
       </div>
-      <Toolbar :page="page" :showFullBtn="showFullBtn" :search.sync="table.search" :costTime="result.costTime" @changePage="changePage" @sendToVscode="sendToVscode" @export="exportOption.visible = true" @insert="$refs.editor.openInsert()" @deleteConfirm="deleteConfirm" @run="info.message = false;execute(toolbar.sql);" />
+      <Toolbar :page="page" :showFullBtn="showFullBtn" :search.sync="table.search" :result="result" @changePage="changePage" @sendToVscode="sendToVscode" @export="exportOption.visible = true" @insert="reqInsert()" @deleteConfirm="deleteConfirm" @run="info.message = false;execute(toolbar.sql);" />
       <div v-if="info.message ">
         <div v-if="info.error" class="info-panel" style="color:red !important" v-html="info.message"></div>
         <div v-if="!info.error" class="info-panel" style="color: green !important;" v-html="info.message"></div>
@@ -14,9 +15,21 @@
     <ux-grid ref="dataTable" :data="filterData" v-loading='table.loading' size='small' :cell-style="{height: '35px'}" @sort-change="sort" :height="remainHeight" width="100vh" stripe :checkboxConfig="{ checkMethod: selectable}">
       <ux-table-column type="checkbox" width="40" fixed="left"></ux-table-column>
       <ux-table-column type="index" width="40" :seq-method="({row,rowIndex})=>(rowIndex||!row.isFilter)?rowIndex:undefined">
-        <Controller slot="header" :result="result" :toolbar="toolbar" />
+        <template #header>
+          <el-popover placement="bottom" width="200" trigger="hover" type="primary">
+            <el-checkbox-group v-model="toolbar.showColumns">
+              <el-checkbox v-for="(column,index) in result.fields" :label="column.name" :key="index">
+                {{ column.name }}
+              </el-checkbox>
+            </el-checkbox-group>
+            <!-- <el-button icon="el-icon-search" circle title="Select columns to show" size="mini" slot="reference">
+            </el-button> -->
+            <el-button icon="el-icon-search" title="Select columns to show." slot="reference" />
+          </el-popover>
+        </template>
+        <!-- <Controller slot="header" :result="result" :toolbar="toolbar" /> -->
       </ux-table-column>
-      <ux-table-column v-for="(field,index) in (result.fields||[]).filter(field=>toolbar.showColumns.includes(field.name.toLowerCase()))" :key="index" :resizable="true" :field="field.name" :title="field.name" :sortable="true" :width="computeWidth(field,0)" edit-render>
+      <ux-table-column v-for="(field,index) in (result.fields||[]).filter(field=>toolbar.showColumns.includes(field.name))" :key="index" :resizable="true" :field="field.name" :title="field.name" :sortable="true" :width="computeWidth(field,0)" edit-render>
         <Header slot="header" slot-scope="scope" :result="result" :scope="scope" :index="index" />
         <Row slot-scope="scope" :scope="scope" :result="result" :filterObj="toolbar.filter" :editList.sync="update.editList" @execute="execute" @sendToVscode="sendToVscode" @openEditor="openEditor" />
       </ux-table-column>
@@ -35,7 +48,8 @@ import ExportDialog from "./component/ExportDialog.vue";
 import Toolbar from "./component/Toolbar";
 import EditDialog from "./component/EditDialog";
 import { util } from "./mixin/util";
-import { wrapByDb } from "@/common/wrapper";
+import { buildDeleteSQL } from './util/sqlGenerator';
+import { wrapByDb } from '@/common/wrapper';
 let vscodeEvent;
 
 export default {
@@ -56,10 +70,12 @@ export default {
       result: {
         data: [],
         dbType: "",
+        single: true,
         costTime: 0,
         sql: "",
         primaryKey: null,
         columnList: null,
+        columnTypeMap: null,
         primaryKeyList: null,
         database: null,
         table: null,
@@ -91,18 +107,21 @@ export default {
         needRefresh: true,
       },
       update: {
-        editList: {},
+        editList: [],
         lock: false,
       },
     };
   },
   mounted() {
-    this.remainHeight = window.innerHeight - 90;
-    this.showFullBtn = window.outerWidth / window.innerWidth >= 2;
-    window.addEventListener("resize", () => {
-      this.remainHeight = window.innerHeight - 90;
-      this.showFullBtn = window.outerWidth / window.innerWidth >= 2;
-    });
+    this.focusHolder();
+    const hint = this.$refs.hint;
+    const updateHeight = () => {
+      this.remainHeight = window.innerHeight - 10 - hint.clientHeight;
+      this.showFullBtn = (window.outerWidth / window.innerWidth >= 2) || (window.outerHeight - window.innerHeight > 100);
+    }
+    updateHeight()
+    new ResizeObserver(updateHeight).observe(hint)
+    window.addEventListener("resize", updateHeight);
     const handlerData = (data, sameTable) => {
       this.result = data;
       this.toolbar.sql = data.sql;
@@ -127,6 +146,7 @@ export default {
       this.update.lock = false;
     };
     const handlerCommon = (res) => {
+      this.table.loading = false;
       if (this.$refs.editor) {
         this.$refs.editor.close();
       }
@@ -135,11 +155,16 @@ export default {
     vscodeEvent = getVscodeEvent();
 
     vscodeEvent.on("updateSuccess", () => {
-      for (const index in this.update.editList) {
-        const element = this.update.editList[index];
-        this.result.data[index] = element;
-      }
       this.update.editList = [];
+      if (this.isEs()) {
+        setTimeout(() => {
+          this.result.data = []
+          this.refresh()
+        }, 1000);
+      } else {
+        this.result.data = []
+        this.refresh()
+      }
       this.update.lock = false;
       this.$message({
         showClose: true,
@@ -147,7 +172,11 @@ export default {
         message: "Update Success",
         type: "success",
       });
-    });
+    })
+      .on("isSingle", (isSingle) => {
+        this.result.single = isSingle;
+      })
+
     window.onkeypress = (e) => {
       if (
         (e.code == "Enter" && e.target.classList.contains("edit-column")) ||
@@ -160,24 +189,30 @@ export default {
     };
     window.addEventListener("message", ({ data }) => {
       if (!data) return;
-      const response = data.content;
       console.log(data);
-      this.result.transId=response.transId;
-      this.table.loading = false;
+      const response = data.content;
+      const runLoading = this.result.transId == null || (response && response.transId > this.result.transId);
+      if (response) {
+        this.result.transId = response.transId;
+        if (response.language) {
+          this.$i18n.locale = response.language
+        }
+      }
       switch (data.type) {
         case "EXPORT_DONE":
           this.exportOption.visible = false;
           break;
         case "RUN":
           this.toolbar.sql = response.sql;
-          this.table.loading = response.transId != this.result.transId;
+          this.table.loading = runLoading;
           break;
         case "DATA":
           handlerData(response);
           break;
         case "NEXT_PAGE":
+          this.table.loading = false;
           this.result.data = response.data;
-          this.result.costTime=response.costTime;
+          this.result.costTime = response.costTime;
           this.toolbar.sql = response.sql;
           this.result.data.unshift({ isFilter: true, content: "" });
           break;
@@ -222,13 +257,47 @@ export default {
     });
   },
   methods: {
-    panelInput(event){
-      if(event.code=='Enter' && event.ctrlKey){
+    isEs() {
+      return this.result.dbType == 'ElasticSearch';
+    },
+    reqInsert() {
+      if (this.isEs() || this.result.dbType == 'MongoDB') {
+        this.$refs.editor.openInsert()
+      } else {
+        this.result.data.push({ _isNewPush: 1 })
+        setTimeout(() => {
+          const el = document.querySelector('.plx-table--body-wrapper');
+          el.scrollTo({ top: el.scrollHeight })
+        }, 1);
+      }
+    },
+    focusHolder() {
+      let lastElement;
+      window.onfocus = () => {
+        setTimeout(() => {
+          if (lastElement) {
+            lastElement.focus()
+          }
+        }, 10)
+      }
+      window.onblur = () => {
+        const ae = document.activeElement;
+        if (!ae) {
+          return;
+        }
+        const tagName = ae.tagName.toLowerCase()
+        if ((tagName == 'input' || tagName == 'textarea') || (tagName == 'div' && ae.contentEditable == 'true')) {
+          lastElement = ae;
+        }
+      }
+    },
+    panelInput(event) {
+      if (event.code == 'Enter' && event.ctrlKey) {
         this.execute(this.toolbar.sql)
         event.stopPropagation()
       }
     },
-    selectable({row}) {
+    selectable({ row }) {
       return this.editable && !row.isFilter;
     },
     save() {
@@ -239,10 +308,11 @@ export default {
       let sql = "";
       for (const index in this.update.editList) {
         const element = this.update.editList[index];
-        sql += this.$refs.editor.buildUpdateSql(
-          element,
-          this.result.data[index]
-        );
+        if (element._isNewPush) {
+          sql += this.$refs.editor.buildInsertSQL(element);
+        } else {
+          sql += this.$refs.editor.buildUpdateSql(element, this.result.data[index]);
+        }
       }
       if (sql) {
         vscodeEvent.emit("saveModify", sql);
@@ -268,16 +338,23 @@ export default {
       });
     },
     sort(row) {
-      if (this.result.dbType == "ElasticSearch") {
+      if (this.isEs()) {
         vscodeEvent.emit("esSort", [{ [row.prop]: { order: row.order } }]);
         return;
       }
+
+      if (this.result.dbType == "MongoDB") {
+        let sortSql = this.result.sql
+          .replace(/.sort\(.+?\)/gi, "")
+          .replace(/\s?(limit.+)?$/i, `sort({"${row.prop}": ${row.order.toLowerCase() == 'desc' ? -1 : 1}}).\$1 `);
+        this.execute(sortSql);
+        return;
+      }
+
       let sortSql = this.result.sql
-        .replace(/\n/, " ")
-        .replace(";", "")
         .replace(/order by .+? (desc|asc)?/gi, "")
-        .replace(/\s?(limit.+)?$/i, ` ORDER BY ${row.prop} ${row.order} \$1 `);
-      this.execute(sortSql + ";");
+        .replace(/\s?(limit.+)?$/i, ` ORDER BY ${wrapByDb(row.prop, this.result.dbType)} ${row.order} \$1 `);
+      this.execute(sortSql);
     },
     getTypeByColumn(key) {
       if (!this.result.columnList) return;
@@ -288,62 +365,43 @@ export default {
       }
     },
     deleteConfirm() {
+      if (this.result.dbType == 'ClickHouse') {
+        this.$message.error(this.$t("result.deleteClickHouseNotice"));
+        return;
+      }
       const datas = this.$refs.dataTable.getCheckboxRecords();
       if (!datas || datas.length == 0) {
         this.$message({
           type: "warning",
-          message: "You need to select at least one row of data.",
+          message: this.$t("result.deleteNotice"),
         });
         return;
       }
-      this.$confirm("Are you sure you want to delete this data?", "Warning", {
-        confirmButtonText: "OK",
-        cancelButtonText: "Cancel",
-        type: "warning",
-      })
+      const unAddData = [];
+      const removeIndexes = [];
+      for (let i = this.result.data.length - 1; i > 0; i--) {
+        const r = this.result.data[i];
+        if (r[this.result.primaryKey]) break;
+        if (datas.filter(c => c._XID == r._XID).length > 0) {
+          unAddData.push(r._XID);
+          removeIndexes.push(i)
+        }
+      }
+      const records = datas.filter((r) => !unAddData.includes(r._XID)).map((checkboxRecord) =>
+        this.wrapQuote(this.result.dbType, this.getTypeByColumn(this.result.primaryKey), checkboxRecord[this.result.primaryKey])
+      );
+      if (records.length == 0) {
+        for (const i of removeIndexes) {
+          this.result.data.splice(i, 1)
+          delete this.update.editList[i]
+        }
+        return;
+      };
+      this.$confirm("Are you sure you want to delete this data?", "Warning", { confirmButtonText: "OK", cancelButtonText: "Cancel", type: "warning", })
         .then(() => {
-          let checkboxRecords = datas
-            .filter(
-              (checkboxRecord) => checkboxRecord[this.result.primaryKey] != null
-            )
-            .map((checkboxRecord) =>
-              this.wrapQuote(
-                this.getTypeByColumn(this.result.primaryKey),
-                checkboxRecord[this.result.primaryKey]
-              )
-            );
-          let deleteSql = null;
-          if (this.result.dbType == "ElasticSearch") {
-            deleteSql =
-              checkboxRecords.length > 1
-                ? `POST /_bulk\n${checkboxRecords
-                    .map(
-                      (c) =>
-                        `{ "delete" : { "_index" : "${this.result.table}", "_id" : "${c}" } }`
-                    )
-                    .join("\n")}`
-                : `DELETE /${this.result.table}/_doc/${checkboxRecords[0]}`;
-          } else if (this.result.dbType == "MongoDB") {
-            deleteSql = `db('${this.result.database}').collection("${
-              this.result.table
-            }")
-              .deleteMany({_id:{$in:[${checkboxRecords.join(",")}]}})`;
-          } else {
-            const table=wrapByDb(this.result.table,this.result.dbType);
-            deleteSql =
-              checkboxRecords.length > 1
-                ? `DELETE FROM ${table} WHERE ${this.result.primaryKey} in (${checkboxRecords.join(",")})`
-                : `DELETE FROM ${table} WHERE ${this.result.primaryKey}=${checkboxRecords[0]}`;
-          }
+          const deleteSql = buildDeleteSQL(this.result, records);
           this.execute(deleteSql);
         })
-        .catch((e) => {
-          if (e) {
-            this.$message.error(e);
-          } else {
-            this.$message({ type: "warning", message: "Delete canceled" });
-          }
-        });
     },
     /**
      * compute column row width, get maxium of fieldName or value or fieldType by top 10 row.
@@ -380,9 +438,7 @@ export default {
     },
     execute(sql) {
       if (!sql) return;
-      vscodeEvent.emit("execute", {
-        sql,
-      });
+      vscodeEvent.emit("execute", { sql });
       this.table.loading = true;
     },
     changePage(pageNum, jump) {
@@ -400,7 +456,7 @@ export default {
       this.toolbar.showColumns = [];
       for (let i = 0; i < fields.length; i++) {
         if (!fields[i].name) continue;
-        this.toolbar.showColumns.push(fields[i].name.toLowerCase());
+        this.toolbar.showColumns.push(fields[i].name);
       }
     },
     // show call when load same table data
@@ -417,6 +473,7 @@ export default {
       }
       // loading
       this.table.loading = false;
+      this.$refs.editor.close();
     },
     // show call when change table
     reset() {
@@ -425,7 +482,9 @@ export default {
       this.table.widthItem = {};
       this.initShowColumn();
       // add filter row
-      if (this.result.columnList) {
+      if (!Array.isArray(this.result.data)) {
+        this.$message.error("Unrecognized data!")
+      } else if (this.result.columnList) {
         this.result.data.unshift({ isFilter: true, content: "" });
       }
       // toolbar
@@ -437,6 +496,7 @@ export default {
   },
   computed: {
     filterData() {
+      if (!Array.isArray(this.result.data)) return []
       return this.result.data.filter(
         (data) =>
           !this.table.search ||
@@ -456,3 +516,24 @@ export default {
   },
 };
 </script>
+
+
+<style scoped>
+.el-button--default {
+  padding: 0;
+  border: none;
+  font-size: 17px;
+  margin-left: 7px;
+}
+
+.el-button:focus {
+  color: inherit !important;
+  background-color: var(--vscode-editor-background);
+}
+
+.el-button:hover {
+  color: #409eff !important;
+  border-color: #c6e2ff;
+  background-color: var(--vscode-editor-background);
+}
+</style>

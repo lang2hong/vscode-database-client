@@ -32,7 +32,7 @@ export class ViewGroup extends Node {
                     return new ViewNode(table, this);
                 });
                 if (tableNodes.length == 0) {
-                    tableNodes = [new InfoNode("This schema has no views")];
+                    tableNodes = [new InfoNode("This schema has no view")];
                 }
                 this.setChildCache(tableNodes);
                 return tableNodes;

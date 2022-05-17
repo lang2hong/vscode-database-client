@@ -31,7 +31,11 @@
       </div>
     </section>
 
-    <section class="mb-2" v-if="connectionOption.dbType=='SSH'">
+    <section class="mb-2">
+       <div class="inline-block mr-10">
+          <label class="font-bold mr-5 inline-block w-28">SFtp Root</label>
+          <input class="w-64 field__input" placeholder="SFtp root path, default is /" v-model="connectionOption.ssh.ftpRoot" />
+        </div>
       <div class="inline-block mr-10">
         <label class="font-bold mr-5 inline-block w-32">Show Hidden File</label>
         <el-switch v-model="connectionOption.showHidden"></el-switch>
@@ -42,7 +46,7 @@
       <label class="font-bold mr-5 inline-block w-28">Type</label>
       <el-radio v-model="connectionOption.ssh.type" label="password">Password</el-radio>
       <el-radio v-model="connectionOption.ssh.type" label="privateKey">Private Key</el-radio>
-      <el-radio v-model="connectionOption.ssh.type" label="native">Native SSH</el-radio>
+      <!-- <el-radio v-model="connectionOption.ssh.type" label="native">Native SSH(Experiment)</el-radio> -->
     </section>
 
     <div v-if="connectionOption.ssh.type == 'password'">
@@ -56,20 +60,20 @@
         <div class="inline-block mr-10">
           <label class="font-bold mr-5 inline-block w-28">Private Key Path</label>
           <input class="w-52 field__input" placeholder="Private Key Path" v-model="connectionOption.ssh.privateKeyPath" />
-          <button @click="choose('privateKey')" class=" w-12">Choose</button>
+          <button @click="$emit('choose','privateKey')" class=" w-12">Choose</button>
         </div>
         <div class="inline-block mr-10">
           <label class="font-bold mr-5 inline-block w-28">Passphrase</label>
-          <input class="w-64 field__input" placeholder="Passphrase" type="passphrase" v-model="connectionOption.ssh.passphrase" />
-        </div>
-      </section>
-      <section class="mb-2" v-if="connectionOption.ssh.type == 'native'">
-        <div class="inline-block mr-10">
-          <label class="font-bold mr-5 inline-block w-28">Waiting Time</label>
-          <input class="w-64 field__input" placeholder="Waiting time for ssh command." v-model="connectionOption.ssh.watingTime" />
+          <input class="w-64 field__input" placeholder="Passphrase" type="password" v-model="connectionOption.ssh.passphrase" />
         </div>
       </section>
     </div>
+    <section class="mb-2">
+      <div class="inline-block mr-10">
+        <label class="font-bold mr-5 inline-block w-128">Connect Timeout</label>
+        <input class="w-64 field__input" placeholder="SSH connection timeout." v-model="connectionOption.ssh.connectTimeout" />
+      </div>
+    </section>
   </div>
 </template>
 

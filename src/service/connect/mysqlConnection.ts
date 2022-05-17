@@ -8,11 +8,16 @@ export class MysqlConnection extends IConnection {
     private con: mysql.Connection;
     constructor(node: Node) {
         super()
+        if(node.useConnectionString){
+            this.con=mysql.createConnection(node.connectionUrl);
+            return;
+        }
         let config = {
             host: node.host, port: node.port, user: node.user, password: node.password, database: node.database,
             timezone: node.timezone,
             multipleStatements: true, dateStrings: true, supportBigNumbers: true, bigNumberStrings: true,
             connectTimeout: node.connectTimeout || 5000,
+            socketPath:node.socketPath,
             typeCast: (field, next) => {
                 if (this.dumpMode) return dumpTypeCast(field as mysql.TypecastField)
                 const buf = field.buffer();
@@ -39,7 +44,7 @@ export class MysqlConnection extends IConnection {
     query(sql: string, callback?: queryCallback): void;
     query(sql: string, values: any, callback?: queryCallback): void;
     query(sql: any, values?: any, callback?: any) {
-        return this.con.query({ sql, infileStreamFactory: (path: string) => fs.createReadStream(path) } as any, values, callback)
+        return this.con.query(sql, values, callback)
     }
     connect(callback: (err: Error) => void): void {
         this.con.connect(callback)

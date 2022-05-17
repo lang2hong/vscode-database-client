@@ -1,8 +1,9 @@
+import { ColumnMeta } from "@/common/typeDef";
 import { UpdateTableParam } from "./param/updateTableParam";
 import { SqlDialect } from "./sqlDialect";
 
 export class SqliTeDialect extends SqlDialect{
-    updateColumn(table: string, column: string, type: string, comment: string, nullable: string): string {
+    updateColumn(table: string, column: ColumnMeta): string {
         throw new Error("Method not implemented.");
     }
     showIndex(database: string, table: string):string{
@@ -17,7 +18,7 @@ export class SqliTeDialect extends SqlDialect{
     showTables(database: string): string {
         return `SELECT name, type FROM sqlite_master WHERE type="table" AND name <> 'sqlite_sequence' AND name <> 'sqlite_stat1' ORDER BY type ASC, name ASC;`;
     }
-    addColumn(table: string): string {
+    addColumn(table: string,column?:string): string {
         throw new Error("Method not implemented.");
     }
     showColumns(database: string, table: string): string {
@@ -73,7 +74,7 @@ export class SqliTeDialect extends SqlDialect{
     }
     tableTemplate(): string {
         return `CREATE TABLE [name](  
-    id INTEGER NOT NULL primary key,
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     [column] TEXT
 );`
     }

@@ -1,15 +1,12 @@
-import { existsSync, readFileSync } from 'fs';
 import * as Mock from '@/bin/mockjs';
 import * as vscode from "vscode";
 import { MessageType } from "../../common/constants";
 import { ConnectionManager } from "../connectionManager";
-import { DatabaseCache } from "../common/databaseCache";
 import { QueryUnit } from "../queryUnit";
 import { ColumnNode } from "../../model/other/columnNode";
 import { TableNode } from '../../model/main/tableNode';
 import { QueryPage } from "../result/query";
 import { MessageResponse } from "../result/queryResponse";
-import { FileManager, FileModel } from '../../common/filesManager';
 import { MockModel } from './mockModel';
 import { Node } from '../../model/interface/node';
 import { ColumnMeta } from "@/common/typeDef";
@@ -18,13 +15,12 @@ import { TableGroup } from '@/model/main/tableGroup';
 export class MockRunner {
 
     private readonly MOCK_INDEX = "$mockIndex";
-    public static primaryKeyMap: { [key: string]: string } = {}
 
     public async create(tableNode: TableNode) {
         const columnList = (await tableNode.getChildren()) as ColumnNode[]
         const mockModel: MockModel = {
-            schema: tableNode.schema,table: tableNode.table,
-            mockStartIndex: MockRunner.primaryKeyMap[tableNode.uid] ? 'auto' : 1
+            table: tableNode.table,
+            mockStartIndex: tableNode.primaryKey ? 'auto' : 1
             , mockCount: 10, mockValueReference: "http://mockjs.com/examples.html#DPD", mock: {}
         }
         for (const columnNode of columnList) {
@@ -97,12 +93,22 @@ export class MockRunner {
     private wrapQuote(type: string, value: any): any {
         type = type.toLowerCase()
         switch (type) {
-            case "varchar": case "char": case "date": case "time": case "timestamp": case "datetime": case "set": case "json":
-                return `'${value}'`
+            case "int":
+            case "bit":
+            case "real":
+            case "numeric":
+            case "decimal":
+            case "float":
+            case "double":
+            case "bool":
+            case "boolean":
+                return value
             default:
-                if (type.indexOf("text") != -1 || type.indexOf("blob") != -1 || type.indexOf("binary") != -1) { return `'${value}'` }
+                if (type.includes("int") || type.includes("serial")) {
+                    return value
+                }
         }
-        return value;
+        return `'${value}'`.replace(/\\/g,"\\\\")
     }
 
     // refrence : http://mockjs.com/examples.html
@@ -165,6 +171,11 @@ export class MockRunner {
                 return "@time()"
             case "timestamp": case "datetime":
                 return "@datetime()"
+        }
+        if(type.includes("character")){
+            return "@string('lower',5)"
+        } else if(type.includes("timestamp")){
+            return "@datetime()"
         }
         return "@integer(1," + length + ")";
     }

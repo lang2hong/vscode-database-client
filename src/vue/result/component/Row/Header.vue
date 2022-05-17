@@ -1,19 +1,20 @@
 <template>
-  <el-tooltip class="item" effect="dark" :content="getTip(result.columnList[index],scope.column)" placement="left-start">
+  <!-- <el-tooltip class="item" effect="dark" :content="getTip(result.columnTypeMap[scope.column.title],scope.column)" placement="left-start"> -->
     <div>
       <span>
-        <span v-if="result.columnList[index]&& (result.columnList[index].nullable != 'YES')" style="color: #f94e4e; position: relative; top: .2em;">
+        <span v-if="result.columnTypeMap[scope.column.title]&& (result.columnTypeMap[scope.column.title].nullable != 'YES')" style="color: #f94e4e; position: relative; top: .2em;">
           *
         </span>
         <span class="column-name">
-          {{ scope.column.title }}<br />
+          {{ scope.column.title }}
         </span>
       </span>
-      <span class="column-type" v-if="result.columnList[index]">
-        {{result.columnList[index].type}}
+      <br />
+      <span class="column-type" v-if="result.columnTypeMap[scope.column.title]">
+        {{result.columnTypeMap[scope.column.title].type}}
       </span>
     </div>
-  </el-tooltip>
+  <!-- </el-tooltip> -->
 </template>
 
 <script>

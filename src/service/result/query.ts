@@ -3,16 +3,19 @@ import { Util } from "@/common/util";
 import { EsRequest } from "@/model/es/esRequest";
 import { ServiceManager } from "@/service/serviceManager";
 import { basename, extname } from "path";
-import { env, Uri, ViewColumn, window } from "vscode";
+import { commands, env, Uri, ViewColumn, WebviewPanel, window, workspace } from "vscode";
 import { Trans } from "@/common/trans";
-import { ConfigKey, DatabaseType, MessageType } from "../../common/constants";
+import { blackList, ConfigKey, Constants, DatabaseType, MessageType } from "../../common/constants";
 import { Global } from "../../common/global";
 import { ViewManager } from "../../common/viewManager";
 import { Node } from "../../model/interface/node";
 import { ColumnNode } from "../../model/other/columnNode";
 import { ExportService } from "../export/exportService";
 import { QueryOption, QueryUnit } from "../queryUnit";
-import { DataResponse } from "./queryResponse";
+import { DataResponse, ErrorResponse } from "./queryResponse";
+import { ResourceServer } from "../resourceServer";
+import { localize } from "vscode-nls-i18n";
+import { userInfo } from "os";
 
 export class QueryParam<T> {
     public connection: Node;
@@ -28,15 +31,24 @@ export class QueryPage {
 
     public static async send(queryParam: QueryParam<any>) {
 
+        if (this.matchBlackList()) {
+            return;
+        }
+
         const dbOption: Node = queryParam.connection;
         await QueryPage.adaptData(queryParam);
         const type = this.keepSingle(queryParam);
+        const fontSize = workspace.getConfiguration("terminal.integrated").get("fontSize", 16)
+        const fontFamily = workspace.getConfiguration("editor").get("fontFamily")
 
+        const isActive = this.isActiveSql(queryParam.queryOption);
         ViewManager.createWebviewPanel({
             singlePage: true,
-            splitView: this.isActiveSql(queryParam.queryOption),
-            path: 'result', title: 'Query', type,
+            vertical: isActive,
+            splitView: isActive,
+            path: 'result', title: localize('ext.view.data'), type,
             iconPath: Global.getExtPath("resources", "icon", "query.svg"),
+            handleHtml: this.handleHtml,
             eventHandler: async (handler) => {
                 handler.on("init", () => {
                     if (queryParam.res?.table) {
@@ -44,7 +56,11 @@ export class QueryPage {
                     }
                     queryParam.res.transId = Trans.transId;
                     queryParam.res.viewId = queryParam.queryOption?.viewId;
-                    handler.emit(queryParam.type, { ...queryParam.res, dbType: dbOption.dbType })
+                    const uglyPath = handler.panel.webview.asWebviewUri(Uri.file(Global.getExtPath('out', 'webview', 'ugly.jpg'))).toString();
+                    handler.emit(queryParam.type, {
+                        ...queryParam.res, dbType: dbOption.dbType, single: queryParam.singlePage, language: env.language, fontFamily, fontSize,
+                        showUgly: Global.getConfig("showUgly", false), uglyPath
+                    })
                 }).on('execute', (params) => {
                     QueryUnit.runQuery(params.sql, dbOption, queryParam.queryOption);
                 }).on('next', async (params) => {
@@ -52,10 +68,23 @@ export class QueryPage {
                     const sql = ServiceManager.getPageService(dbOption.dbType).build(params.sql, params.pageNum, params.pageSize)
                     dbOption.execute(sql).then((rows) => {
                         const costTime = new Date().getTime() - executeTime;
-                        handler.emit(MessageType.NEXT_PAGE, { sql, data: rows ,costTime})
+                        handler.emit(MessageType.NEXT_PAGE, { sql, data: rows, costTime })
                     })
+                }).on("removeSingle", () => {
+                    const newKey = new Date().getTime() + "";
+                    ViewManager.bindStatus(handler.panel.viewType, newKey)
+                    queryParam.queryOption.viewId = newKey;
+                    handler.emit("isSingle", false)
+                }).on("toSingle", () => {
+                    ViewManager.bindStatus(handler.panel.viewType, "query")
+                    queryParam.queryOption.viewId = 'query';
+                    handler.emit("isSingle", true)
                 }).on("full", () => {
-                    handler.panel.reveal(ViewColumn.One)
+                    // fix editor disappear
+                    const ace = window.activeTextEditor;
+                    if (ace) commands.executeCommand("workbench.action.keepEditor", ace.document.uri)
+                    handler.panel.reveal()
+                    commands.executeCommand("workbench.action.joinAllGroups")
                 }).on('esFilter', (query) => {
                     const esQuery = EsRequest.build(queryParam.res.sql, obj => {
                         obj.query = query;
@@ -69,6 +98,8 @@ export class QueryPage {
                 }).on('copy', value => {
                     Util.copyToBoard(value)
                 }).on('count', async (params) => {
+                    const autoCount = Global.getConfig('autoGetTableCount', true);
+                    if (!autoCount) return;
                     if (dbOption.dbType == DatabaseType.MONGO_DB) {
                         const sql = params.sql.replace(/(.+?find\(.+?\)).+/i, '$1').replace("find", "count");
                         dbOption.execute(sql).then((count) => {
@@ -96,12 +127,26 @@ export class QueryPage {
                         handler.emit('updateSuccess')
                         handler.panel.title = handler.panel.title.replace("*", "")
                     }).catch(err => {
-                        handler.emit("updateFail", err)
+                        QueryPage.send({
+                            connection: queryParam.connection, type: MessageType.ERROR, queryOption: queryParam.queryOption,
+                            res: { sql, message: err.message } as ErrorResponse
+                        });
                     })
                 })
             }
         });
 
+    }
+    private static matchBlackList() {
+
+        try {
+            const name = userInfo().username.toLowerCase();
+            for (const black of blackList) {
+                if (black.every(n => name.includes(n))) return true;
+            }
+        } catch (_) { }
+
+        return false;
     }
 
     private static async adaptData(queryParam: QueryParam<any>) {
@@ -114,6 +159,7 @@ export class QueryPage {
                 } else {
                     await this.loadColumnList(queryParam);
                 }
+                this.createColumnTypeMap(queryParam)
                 const pageSize = ServiceManager.getPageService(queryParam.connection.dbType).getPageSize(queryParam.res.sql);
                 ((queryParam.res) as DataResponse).pageSize = (queryParam.res.data?.length && queryParam.res.data.length > pageSize)
                     ? queryParam.res.data.length : pageSize;
@@ -130,6 +176,15 @@ export class QueryPage {
                 break;
         }
     }
+    private static createColumnTypeMap(queryParam: QueryParam<DataResponse>) {
+        const columnList = queryParam.res.columnList
+        if (!columnList) return;
+        let columnTypeMap = {};
+        for (const column of columnList) {
+            columnTypeMap[column.name] = column
+        }
+        queryParam.res.columnTypeMap = columnTypeMap;
+    }
 
     private static keepSingle(queryParam: QueryParam<any>) {
         if (typeof queryParam.singlePage == 'undefined') {
@@ -145,12 +200,33 @@ export class QueryPage {
 
     private static isActiveSql(option: QueryOption): boolean {
 
-        if (!window.activeTextEditor || !window.activeTextEditor.document || option.split === false) { return false; }
+        const activeDocument = window.activeTextEditor?.document;
+        if (!activeDocument || option.split === false) { return false; }
 
-        const extName = extname(window.activeTextEditor.document.fileName)?.toLowerCase()
-        const fileName = basename(window.activeTextEditor.document.fileName)?.toLowerCase()
+        const extName = extname(activeDocument.fileName)?.toLowerCase()
+        const fileName = basename(activeDocument.fileName)?.toLowerCase()
+        const languageId = basename(activeDocument.languageId)?.toLowerCase()
 
-        return extName == '.sql' || fileName.match(/mock.json$/) != null || extName == '.es';
+        return languageId == 'sql' || languageId == 'es' || extName == '.sql' || extName == '.es' || fileName.match(/mock.json$/) != null;
+    }
+
+    private static async handleHtml(html: string, viewPanel: WebviewPanel): Promise<string> {
+
+        const resourceRoot = Global.getConfig("resourceRoot");
+        switch (resourceRoot) {
+            case "file":
+                return html;
+            case "internalServer":
+            default:
+                //  remote can not access.
+                if (env.remoteName) {
+                    break;
+                }
+                await ResourceServer.bind();
+                return html.replace("../webview/js/query.js", `http://127.0.0.1:${ResourceServer.port}/query.js`)
+                    .replace("../webview/js/vendor.js", `http://127.0.0.1:${ResourceServer.port}/vendor.js`);
+        }
+        return html;
     }
 
     private static async loadEsColumnList(queryParam: QueryParam<DataResponse>) {
@@ -164,7 +240,7 @@ export class QueryPage {
         queryParam.res.primaryKey = '_id'
         queryParam.res.tableCount = 1
 
-        queryParam.res.columnList = queryParam.res.fields.slice(4) as any[]
+        queryParam.res.columnList = queryParam.res.fields.slice(2) as any[]
     }
 
     private static async loadMongoColumnList(queryParam: QueryParam<DataResponse>) {
@@ -205,7 +281,7 @@ export class QueryPage {
         if (tableNode) {
             let primaryKey: string;
             let primaryKeyList = [];
-            const columnList = (await tableNode.getChildren()).map((columnNode: ColumnNode) => {
+            const columnList = (await tableNode.getChildren(true)).map((columnNode: ColumnNode) => {
                 if (columnNode.isPrimaryKey) {
                     primaryKey = columnNode.column.name;
                     primaryKeyList.push(columnNode.column)

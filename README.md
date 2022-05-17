@@ -1,9 +1,5 @@
 # Database Client for Visual Studio Code
 
-The online document is migrate to https://doc.database-client.com.
-
----
-
 <p align="center">
 <a href="https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-mysql-client2">
     <img src="https://img.shields.io/vscode-marketplace/v/cweijan.vscode-mysql-client2.svg?label=vscode%20marketplace">
@@ -23,11 +19,13 @@ The online document is migrate to https://doc.database-client.com.
 </p>
 <br>
 
-This project is a database client for VSCode, supports manager **MySQL/MariaDB, PostgreSQL, SQLite, Redis, ClickHouse, 达梦**, and **ElasticSearch**, and works as an **SSH** client, boost your maximum productivity!
+The Database Client make your life easy. It supports manager MySQL/MariaDB, PostgreSQL, SQLite, Redis, and ElasticSearch.
 
 > Project site: [vscode-database-client](https://github.com/cweijan/vscode-database-client), [中文文档](README_CN.md)
 
-[![Logo](./public/logo_dark.png)](https://database-client.com)
+If this extension is helpful to you, please consider buy author a cup of coffee:
+
+<a href="https://www.buymeacoffee.com/cweijan" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
 ## Features
 
@@ -52,13 +50,10 @@ Install from vscode marketplace [vscode-database-client](https://marketplace.vis
 
 ![connection](images/connection.jpg)
 
-Two panels are created because in some cases you need to view both SQL and NoSQL data at the same time, you can drag the panel to the other by long-pressing.
-
 ## Table
 
 1. Click table to open table view.
-2. Click button beside table to open new table view.
-3. Then you can do data modification on the table view.
+2. Then you can do data modification on the view page.
 
 ![query](images/QueryTable.jpg)
 
@@ -100,10 +95,13 @@ The extension implements the backup function, but it is not stable enough. You c
 
 This extension contain some setting, can be modified as follows.
 
-The default settings can get the best experience, don't worry
-
 ![image](https://user-images.githubusercontent.com/27798227/146523121-9de9c708-8a8e-4e3b-ae1d-9da36f3217e1.png)
 ![](images/1611910592756.png)
+
+## Note
+
+1. MSSQL, ClickHouse and MongoDB dit not get higt support and are only recommended for browsing data.
+2. SQL formatter stop maintenance, do not report related issue.
 
 ## Filter
 

@@ -9,7 +9,7 @@ import { DatabaseType } from "@/common/constants";
 
 export class ExportService {
 
-    public export(context: ExportContext): Thenable<any> {
+    public export(context: ExportContext): any {
         let exportFolders = vscode.workspace.workspaceFolders
         let cwd = "";
         if (exportFolders === undefined) {
@@ -18,7 +18,7 @@ export class ExportService {
             cwd = exportFolders[0].uri.path
         }
         const randomFileName = `${cwd}/${new Date().getTime()}.${context.type}`
-        console.log(randomFileName)
+
         return vscode.window.showSaveDialog({ saveLabel: "Select export file path", defaultUri: vscode.Uri.file(randomFileName), filters: { 'file': [context.type] } }).then((filePath) => {
             return new Promise((res, rej) => {
                 if (filePath) {
@@ -88,8 +88,8 @@ export class ExportService {
     }
 
     private exportToJson(context: ExportContext) {
-        fs.writeFileSync(context.exportPath, JSON.stringify(context.rows, (k, v:any) => {
-            if(context.dbOption.dbType==DatabaseType.MONGO_DB && v.indexOf && v.indexOf("ObjectID")!=-1){
+        fs.writeFileSync(context.exportPath, JSON.stringify(context.rows, (k, v: any) => {
+            if (context.dbOption.dbType == DatabaseType.MONGO_DB && v.indexOf && v.indexOf("ObjectID") != -1) {
                 return undefined;
             }
             return v === undefined ? null : v;
@@ -138,9 +138,13 @@ export class ExportService {
 
     private exportToCsv(filePath: string, fields: FieldInfo[], rows: any) {
         let csvContent = "";
+        for (const field of fields) {
+            csvContent += `${field.name || ''},`
+        }
+        csvContent = csvContent.replace(/.$/, "") + "\n"
         for (const row of rows) {
             for (const key in row) {
-                csvContent += `${row[key] != null ? row[key] : ''},`
+                csvContent += `${row[key] || ''},`
             }
             csvContent = csvContent.replace(/.$/, "") + "\n"
         }

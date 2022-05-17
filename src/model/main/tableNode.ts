@@ -1,3 +1,4 @@
+import { FileModel } from "@/common/filesManager";
 import { ColumnMeta, TableMeta } from "@/common/typeDef";
 import { Hanlder, ViewManager } from "@/common/viewManager";
 import * as vscode from "vscode";
@@ -6,7 +7,6 @@ import { Global } from "../../common/global";
 import { Util } from "../../common/util";
 import { DbTreeDataProvider } from "../../provider/treeDataProvider";
 import { ConnectionManager } from "../../service/connectionManager";
-import { MockRunner } from "../../service/mock/mockRunner";
 import { QueryUnit } from "../../service/queryUnit";
 import { CopyAble } from "../interface/copyAble";
 import { Node } from "../interface/node";
@@ -18,16 +18,17 @@ export class TableNode extends Node implements CopyAble {
     public iconPath = new vscode.ThemeIcon("split-horizontal")
     public contextValue: string = ModelType.TABLE;
     public table: string;
+    public primaryKey: string;
 
     constructor(readonly meta: TableMeta, readonly parent: Node) {
         super(`${meta.name}`)
         this.table = meta.name
-        this.description = `${meta.comment || ''} ${(meta.rows != null) ? `Rows ${meta.rows}` : ''}`
-        if (Util.supportColorIcon) {
-            // this.iconPath=new vscode.ThemeIcon("split-horizontal",new vscode.ThemeColor("problemsWarningIcon.foreground"))
-        }
+        this.description = `${meta.comment || ''} ${meta.table_rows || ''}`
+        // if (Util.supportColorIcon) {
+        //   this.iconPath=new vscode.ThemeIcon("split-horizontal",new vscode.ThemeColor("problemsWarningIcon.foreground"))
+        // }
         this.init(parent)
-        this.tooltip = this.getToolTipe(meta)
+        this.bindToolTipe(meta)
         this.cacheSelf()
         this.command = {
             command: "mysql.table.find",
@@ -43,9 +44,18 @@ export class TableNode extends Node implements CopyAble {
         }
         return this.execute<ColumnMeta[]>(this.dialect.showColumns(this.schema, this.table))
             .then((columns) => {
-                columnNodes = columns.map<ColumnNode>((column, index) => {
-                    return new ColumnNode(this.table, column, this, index);
-                });
+                columnNodes = [];
+                let temp: { [key: string]: ColumnNode } = {};
+                for (let index = 0; index < columns.length; index++) {
+                    const column = columns[index];
+                    if (temp[column.name]) {
+                        temp[column.name].updateInfo(column)
+                    } else {
+                        const colNode = new ColumnNode(this.table, column, this, index);
+                        columnNodes.push(colNode)
+                        temp[column.name] = colNode
+                    }
+                }
                 this.setChildCache(columnNodes)
                 return columnNodes;
             })
@@ -61,24 +71,24 @@ export class TableNode extends Node implements CopyAble {
 
     public async showSource(open = true) {
         let sql: string;
-        if (this.dbType == DatabaseType.MYSQL || this.dbType == DatabaseType.SQLITE) {
+        if (this.dbType == DatabaseType.CLICKHOUSE || this.dbType == DatabaseType.MYSQL || this.dbType == DatabaseType.SQLITE) {
             const sourceResule = await this.execute<any[]>(this.dialect.showTableSource(this.schema, this.table))
             sql = sourceResule[0]['Create Table'];
             if (this.dbType == DatabaseType.SQLITE) {
-                sql = sql.replace(/\\n/g, '\n');
+                sql = sql.replace(/\\n/g, '\n').replace(/\\r/g, '');
             }
         } else {
+            const pkList = [];
+            const colDefList = [];
             const childs = await this.getChildren();
-            sql = `CREATE TABLE ${this.table}(\n`
             for (let i = 0; i < childs.length; i++) {
                 const child: ColumnNode = childs[i] as ColumnNode;
-                if (i == childs.length - 1) {
-                    sql += `    ${child.column.name} ${child.type}${child.isPrimaryKey ? ' PRIMARY KEY' : ''}\n`
-                } else {
-                    sql += `    ${child.column.name} ${child.type}${child.isPrimaryKey ? ' PRIMARY KEY' : ''},\n`
-                }
+                if (child.isPrimaryKey) pkList.push(child.column.name);
+                colDefList.push(`    ${child.column.name} ${child.type}`);
             }
-            sql += ")"
+            sql = `CREATE TABLE ${this.table}(
+${colDefList.join(",\n")}${pkList.length > 0 ? `,\n    PRIMARY KEY(${pkList.join(",")})` : ""}
+)`
         }
         if (open) {
             QueryUnit.showSQLTextDocument(this, sql);
@@ -167,27 +177,28 @@ export class TableNode extends Node implements CopyAble {
     }
 
     public async openInNew() {
-        const pageSize = Global.getConfig<number>(ConfigKey.DEFAULT_LIMIT);
-        const sql = this.dialect.buildPageSql(this.wrap(this.schema), this.wrap(this.table), pageSize);
-        QueryUnit.runQuery(sql, this, { viewId: new Date().getTime() });
-        ConnectionManager.changeActive(this)
+        this.openTable(new Date().getTime())
     }
 
-    public async openTable() {
+    public async openTable(viewId?: any) {
         const pageSize = Global.getConfig<number>(ConfigKey.DEFAULT_LIMIT);
-        const sql = this.dialect.buildPageSql(this.wrap(this.schema), this.wrap(this.table), pageSize);
-        QueryUnit.runQuery(sql, this);
-        ConnectionManager.changeActive(this)
-    }
-
-    public getToolTipe(meta: TableMeta): string {
-        if (this.dbType == DatabaseType.MYSQL && meta.data_length) {
-            return `AUTO_INCREMENT : ${meta.auto_increment || 'null'}
-ROW_FORMAT : ${meta.row_format}
-`
+        let sql = this.dialect.buildPageSql(this.wrap(this.schema), this.wrap(this.table), pageSize);
+        if (sql.includes("*")) {
+            const columns = await this.getColumns()
+            sql = sql.replace('*', columns.join(","))
         }
+        QueryUnit.runQuery(sql, this, { viewId });
+        ConnectionManager.changeActive(this)
+    }
 
-        return ''
+    public bindToolTipe(meta: TableMeta) {
+        this.tooltip = this.label;
+        if (meta.comment) {
+            this.tooltip += "-> " + meta.comment;
+        }
+        if (meta.auto_increment) {
+            this.tooltip += "\nAUTO_INCREMENT: " + meta.auto_increment;
+        }
     }
 
     public insertSqlTemplate(show: boolean = true): Promise<string> {
@@ -210,9 +221,17 @@ ROW_FORMAT : ${meta.row_format}
     }
 
     public async selectSqlTemplate() {
-        const sql = `SELECT * FROM ${Util.wrap(this.table)}`;
-        QueryUnit.showSQLTextDocument(this, sql, Template.table);
+        const columns = await this.getColumns()
+        const sql = `SELECT ${columns.join(",")} FROM ${this.wrap(this.table)};`;
+        QueryUnit.showSQLTextDocument(this, sql, `${this.schema}.sql`, FileModel.APPEND)
+    }
 
+    private async getColumns() {
+        return (await this.getChildren()).map(c => {
+            if (this.dbType == DatabaseType.PG)
+                return `"${c.label}"`;
+            return c.label;
+        });
     }
 
     public deleteSqlTemplate(): any {
@@ -247,9 +266,9 @@ ROW_FORMAT : ${meta.row_format}
 
     public async getMaxPrimary(): Promise<number> {
 
-        const primaryKey = MockRunner.primaryKeyMap[this.uid];
+        const primaryKey = this.primaryKey;
         if (primaryKey != null) {
-            const count = await this.execute(`select max(${primaryKey}) max from ${this.wrap(this.table)}`);
+            const count = await this.execute(`SELECT max(${primaryKey}) max FROM ${this.wrap(this.table)}`);
             if (count && count[0]?.max) {
                 const max = count[0].max;
                 return Number.isInteger(max) || max.match(/^\d+$/) ? max : 0;

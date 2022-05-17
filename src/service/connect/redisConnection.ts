@@ -2,30 +2,35 @@ import { Node } from "@/model/interface/node";
 import { IConnection, queryCallback } from "./connection";
 import * as fs from "fs";
 import IoRedis from "ioredis";
+import IORedis from "ioredis";
 
 export class RedisConnection extends IConnection {
     private conneted: boolean;
-    private client: IoRedis.Redis;
-    constructor(node: Node) {
+    private client: IoRedis.Redis | IORedis.Cluster;
+    constructor(private node: Node) {
         super()
         let config = {
             port: node.port,
             host: node.host,
+            username: node.user || undefined,
             password: node.password,
             connectTimeout: node.connectTimeout || 5000,
             db: node.database as any as number,
             family: 4,
-        }as IoRedis.RedisOptions;
-        if(node.useSSL){
-            config.tls={
+            reconnectOnError() {
+                return false;
+            },
+        } as IoRedis.RedisOptions;
+        if (node.useSSL) {
+            config.tls = {
                 rejectUnauthorized: false,
                 ca: (node.caPath) ? fs.readFileSync(node.caPath) : null,
-                cert: ( node.clientCertPath) ? fs.readFileSync(node.clientCertPath) : null,
-                key: ( node.clientKeyPath) ? fs.readFileSync(node.clientKeyPath) : null,
+                cert: (node.clientCertPath) ? fs.readFileSync(node.clientCertPath) : null,
+                key: (node.clientKeyPath) ? fs.readFileSync(node.clientKeyPath) : null,
                 minVersion: 'TLSv1'
             }
         }
-        this.client = new IoRedis(config);
+        this.client = node.isCluster ? new IoRedis.Cluster([{ host: config.host, port: config.port }], { redisOptions: config }) : new IoRedis(config);
 
 
     }
@@ -34,27 +39,33 @@ export class RedisConnection extends IConnection {
     query(sql: any, values?: any, callback?: any) {
         const param: string[] = sql.replace(/ +/g, " ").split(' ')
         const command = param.shift()
-        this.client.send_command(command, param, callback)
+        if (this.client instanceof IoRedis) {
+            this.client.send_command(command, param, callback)
+        } else {
+            throw new Error("Redis cluster not support send command!")
+        }
     }
-    run(callback: (client: IoRedis.Redis) => void) {
+    run(callback: (client: IoRedis.Redis | IORedis.Cluster) => void) {
 
         callback(this.client)
     }
 
     connect(callback: (err: Error) => void): void {
-        let timeout = true;
+        let occurError = false;
+        this.client.on('error', err => {
+            if (occurError) return;
+            occurError = true;
+            callback(err)
+        })
         setTimeout(() => {
-            if (timeout) {
-                timeout = false;
-                callback(new Error("Connect to redis server time out."))
-            }
-        }, 5000);
+            if (occurError) return;
+            occurError = true;
+            callback(new Error("Connect to redis server time out."))
+        }, this.node.connectTimeout || 5000);
         this.client.ping((err) => {
-            if (timeout) {
-                this.conneted = true;
-                timeout = false;
-                callback(err)
-            }
+            if (occurError) return;
+            occurError = true;
+            callback(err)
         })
     }
     beginTransaction(callback: (err: Error) => void): void {

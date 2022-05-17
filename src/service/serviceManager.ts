@@ -19,10 +19,12 @@ import { MongoDialect } from "./dialect/mongoDialect";
 import { MssqlDIalect } from "./dialect/mssqlDIalect";
 import { MysqlDialect } from "./dialect/mysqlDialect";
 import { PostgreSqlDialect } from "./dialect/postgreSqlDialect";
+import { ClickHouseDialect } from "./dialect/clickHouseDialect";
 import { SqlDialect } from "./dialect/sqlDialect";
 import { DumpService } from "./dump/dumpService";
 import { MysqlImportService } from "./import/mysqlImportService";
 import { PostgresqlImortService } from "./import/postgresqlImortService";
+import { ClickHouseImortService } from "./import/clickHouseImortService";
 import { SqlServerImportService } from "./import/sqlServerImportService";
 import { MockRunner } from "./mock/mockRunner";
 import { EsPageService } from "./page/esPageService";
@@ -30,6 +32,7 @@ import { MssqlPageService } from "./page/mssqlPageService";
 import { MysqlPageSerivce } from "./page/mysqlPageSerivce";
 import { PageService } from "./page/pageService";
 import { PostgreSqlPageService } from "./page/postgreSqlPageService";
+import { ClickHousePageService } from "./page/clickHousePageService";
 import { MysqlSettingService } from "./setting/MysqlSettingService";
 import { SettingService } from "./setting/settingService";
 import ConnectionProvider from "@/model/ssh/connectionProvider";
@@ -38,6 +41,9 @@ import { MongoPageService } from "./page/mongoPageService";
 import { HighlightCreator } from "@/provider/codelen/highlightCreator";
 import { SQLSymbolProvide } from "@/provider/sqlSymbolProvide";
 import { MysqlDumpService } from "./dump/mysqlDumpService";
+import { ResourceServer } from "./resourceServer";
+import { PostgreDumpService } from "./dump/postgreDumpService";
+import { ClickHouseDumpService } from "./dump/clickHouseDumpService";
 
 export class ServiceManager {
 
@@ -58,6 +64,7 @@ export class ServiceManager {
         DatabaseCache.initCache();
         ViewManager.initExtesnsionPath(context.extensionPath);
         FileManager.init(context)
+        ResourceServer.init(context.extensionPath)
         new ConnectionProvider();
     }
 
@@ -102,6 +109,7 @@ export class ServiceManager {
         this.nosqlProvider = new DbTreeDataProvider(this.context, CacheKey.NOSQL_CONNECTION);
         const treeview = vscode.window.createTreeView("github.cweijan.nosql", {
             treeDataProvider: this.nosqlProvider,
+            canSelectMany: true,
         });
         treeview.onDidCollapseElement((event) => {
             DatabaseCache.storeElementState(event.element, vscode.TreeItemCollapsibleState.Collapsed);
@@ -123,6 +131,10 @@ export class ServiceManager {
         switch (dbType) {
             case DatabaseType.MYSQL:
                 return new MysqlDumpService()
+            case DatabaseType.PG:
+                return new PostgreDumpService();
+            case DatabaseType.CLICKHOUSE:
+                return new ClickHouseDumpService();
         }
         return new DumpService()
     }
@@ -134,6 +146,8 @@ export class ServiceManager {
                 return new SqlServerImportService()
             case DatabaseType.PG:
                 return new PostgresqlImortService();
+            case DatabaseType.CLICKHOUSE:
+                return new ClickHouseImortService();
         }
         return new MysqlImportService()
     }
@@ -147,6 +161,8 @@ export class ServiceManager {
                 return new SqliTeDialect()
             case DatabaseType.PG:
                 return new PostgreSqlDialect();
+            case DatabaseType.CLICKHOUSE:
+                return new ClickHouseDialect();
             case DatabaseType.ES:
                 return new EsDialect();
             case DatabaseType.MONGO_DB:
@@ -162,6 +178,8 @@ export class ServiceManager {
                 return new MssqlPageService();
             case DatabaseType.PG:
                 return new PostgreSqlPageService();
+            case DatabaseType.CLICKHOUSE:
+                return new ClickHousePageService();
             case DatabaseType.MONGO_DB:
                 return new MongoPageService();
             case DatabaseType.ES:

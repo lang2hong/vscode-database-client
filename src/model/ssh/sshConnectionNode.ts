@@ -1,7 +1,7 @@
 import { CodeCommand, ConfigKey, Constants, ModelType } from "@/common/constants";
 import { FileManager, FileModel } from "@/common/filesManager";
 import { Util } from "@/common/util";
-import { ClientManager } from "@/service/ssh/clientManager";
+import { SSHClientManager } from "@/service/ssh/clientManager";
 import { ForwardService } from "@/service/ssh/forward/forwardService";
 import { TerminalService } from "@/service/ssh/terminal/terminalService";
 import { XtermTerminal } from "@/service/ssh/terminal/xtermTerminalService";
@@ -16,6 +16,7 @@ import { FileNode } from "./fileNode";
 import { LinkNode } from "./linkNode";
 import prettyBytes = require("pretty-bytes");
 import { Global } from "@/common/global";
+import { exec } from "child_process";
 var progressStream = require('progress-stream');
 
 export class SSHConnectionNode extends Node {
@@ -31,7 +32,7 @@ export class SSHConnectionNode extends Node {
         if (!file) {
             this.contextValue = ModelType.SSH_CONNECTION;
             this.iconPath = new vscode.ThemeIcon("remote");
-            this.label = `${sshConfig.username}@${sshConfig.host}`
+            this.label = sshConfig.host
         } else {
             this.contextValue = ModelType.FOLDER;
             this.iconPath = new vscode.ThemeIcon("folder")
@@ -46,11 +47,16 @@ export class SSHConnectionNode extends Node {
         } else if (iconPath) {
             this.iconPath = iconPath;
         }
+        if (this.disable) {
+            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+            this.description = (this.description||'') + " closed"
+            return;
+        }
     }
 
     public async deleteConnection(context: vscode.ExtensionContext) {
 
-        Util.confirm(`Are you want to Delete Connection ${this.label} ? `, async () => {
+        Util.confirm(`Are you want to Remove Connection ${this.label} ? `, async () => {
             this.indent({ command: CommandKey.delete })
         })
 
@@ -61,7 +67,10 @@ export class SSHConnectionNode extends Node {
     }
 
     public startSocksProxy() {
-        var exec = require('child_process').exec;
+        if(process.platform!="win32"){
+            vscode.window.showErrorMessage("Only Support Windows system!");
+            return;
+        }
         if (this.sshConfig.privateKeyPath) {
             exec(`cmd /c start ssh -i ${this.sshConfig.privateKeyPath} -qTnN -D 127.0.0.1:1080 root@${this.sshConfig.host}`)
         } else {
@@ -77,7 +86,7 @@ export class SSHConnectionNode extends Node {
     public newFile(): any {
         vscode.window.showInputBox().then(async input => {
             if (input) {
-                const { sftp } = await ClientManager.getSSH(this.sshConfig)
+                const { sftp } = await SSHClientManager.getSSH(this.sshConfig)
                 const tempPath = await FileManager.record("temp/" + input, "", FileModel.WRITE);
                 const targetPath = this.fullPath + "/" + input;
                 sftp.fastPut(tempPath, targetPath, err => {
@@ -96,7 +105,7 @@ export class SSHConnectionNode extends Node {
     public newFolder(): any {
         vscode.window.showInputBox().then(async input => {
             if (input) {
-                const { sftp } = await ClientManager.getSSH(this.sshConfig)
+                const { sftp } = await SSHClientManager.getSSH(this.sshConfig)
                 sftp.mkdir(this.fullPath + "/" + input, err => {
                     if (err) {
                         vscode.window.showErrorMessage(err.message)
@@ -114,7 +123,7 @@ export class SSHConnectionNode extends Node {
         vscode.window.showOpenDialog({ canSelectFiles: true, canSelectMany: false, canSelectFolders: false, openLabel: "Select Upload Path" })
             .then(async uri => {
                 if (uri) {
-                    const { sftp } = await ClientManager.getSSH(this.sshConfig)
+                    const { sftp } = await SSHClientManager.getSSH(this.sshConfig)
                     const targetPath = uri[0].fsPath;
 
                     vscode.window.withProgress({
@@ -192,7 +201,7 @@ export class SSHConnectionNode extends Node {
 
     delete(): any {
         Util.confirm("Are you wang to delete this folder?", async () => {
-            const { sftp } = await ClientManager.getSSH(this.sshConfig)
+            const { sftp } = await SSHClientManager.getSSH(this.sshConfig)
             sftp.rmdir(this.fullPath, (err) => {
                 if (err) {
                     vscode.window.showErrorMessage(err.message)
@@ -204,25 +213,26 @@ export class SSHConnectionNode extends Node {
     }
 
     openTerminal(): any {
-        this.terminalService.openMethod(this.sshConfig)
+        this.terminalService.openMethod(this.name,this.sshConfig)
     }
 
     openInTeriminal(): any {
-        this.terminalService.openPath(this.sshConfig, this.fullPath)
+        this.terminalService.openPath(this.name,this.sshConfig, this.fullPath)
     }
 
     async getChildren(): Promise<Node[]> {
 
         return new Promise(async (resolve) => {
             try {
-                const ssh = await ClientManager.getSSH(this.sshConfig)
-                ssh.sftp.readdir(this.file ? this.parentName + this.name : '/', (err, fileList) => {
+                const ssh = await SSHClientManager.getSSH(this.sshConfig)
+                const ftpRoot=this.sshConfig.ftpRoot?this.sshConfig.ftpRoot+"/":"/";
+                ssh.sftp.readdir(this.file ? this.parentName + this.name : ftpRoot, (err, fileList) => {
                     if (err) {
                         resolve([new InfoNode(err.message)]);
                     } else if (fileList.length == 0) {
                         resolve([new InfoNode("There are no files in this folder.")]);
                     } else {
-                        const parent = this.file ? `${this.parentName + this.name}/` : '/';
+                        const parent = this.file ? `${this.parentName + this.name}/` : ftpRoot;
                         resolve(this.build(fileList, parent))
                     }
                 })

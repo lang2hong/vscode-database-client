@@ -1,3 +1,4 @@
+import { Global } from "@/common/global";
 import { HistoryNode } from "@/provider/history/historyNode";
 import { HistoryProvider } from "@/provider/history/historyProvider";
 import { TextEditor, Selection } from "vscode";
@@ -18,7 +19,11 @@ export class HistoryRecorder {
     public recordHistory(sql: string, costTime: number) {
         if (!sql || sql==this.preSql) { return; }
         this.preSql=sql;
-        FileManager.record('history.sql', `/* ${this.getNowDate()} [${costTime} ms] */ ${sql.replace(/[\r\n]/g, " ")}\n`);
+        const recordSelectSQL=Global.getConfig('recordSelectSQL',true);
+        if(!recordSelectSQL && sql.toLowerCase().startsWith("select")){
+            return;
+        }
+        FileManager.record('history.sql', `/* ${this.getNowDate()} [${costTime} ms] */ ${sql}\n`);
         // HistoryProvider.recordHistory(new HistoryNode(sql,this.getNowDate(),costTime))
     }
 

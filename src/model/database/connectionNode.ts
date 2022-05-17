@@ -21,45 +21,16 @@ import { UserGroup } from "./userGroup";
  */
 export class ConnectionNode extends Node implements CopyAble {
 
-    public iconPath: string | vscode.ThemeIcon = path.join(Constants.RES_PATH, "icon/mysql.svg");
+    public iconPath: string | vscode.ThemeIcon = path.join(Constants.RES_PATH, "icon/server/mysql.svg");
     public contextValue: string = ModelType.CONNECTION;
     constructor(readonly key: string, readonly parent: Node) {
         super(key)
         this.init(parent)
-        this.label = (this.usingSSH) ? `${this.ssh.host}@${this.ssh.port}` : `${this.host}@${this.instanceName ? this.instanceName : this.port}`;
-        if (this.dbType == DatabaseType.SQLITE) {
-            this.label = this.dbPath;
-        }
         this.cacheSelf()
-        if (parent.name) {
-            this.name = parent.name
-            const preferName = Global.getConfig(ConfigKey.PREFER_CONNECTION_NAME, true)
-            preferName ? this.label = parent.name : this.description = parent.name;
-        }
-        // https://www.iloveimg.com/zh-cn/resize-image/resize-svg
-        if (this.dbType == DatabaseType.PG) {
-            this.iconPath = path.join(Constants.RES_PATH, "icon/pg_server.svg");
-        } else if (this.dbType == DatabaseType.MSSQL) {
-            this.iconPath = path.join(Constants.RES_PATH, "icon/mssql_server.png");
-        } else if (this.dbType == DatabaseType.SQLITE) {
-            this.iconPath = path.join(Constants.RES_PATH, "icon/sqlite-icon.svg");
-        } else if (this.dbType == DatabaseType.MONGO_DB) {
-            this.iconPath = path.join(Constants.RES_PATH, "icon/mongodb-icon.svg");
-        }
-        if (this.disable) {
-            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
-            this.description = (this.description || '') + " closed"
-            return;
-        }
-        const lcp = ConnectionManager.activeNode;
-        if (lcp && lcp.getConnectId().includes(this.getConnectId())) {
-            this.description = (this.description || '') + " Active"
-        }
-        try {
-            this.getChildren()
-        } catch (error) {
-            Console.log(error)
-        }
+        this.getLabel(parent);
+        this.bindToolTip()
+        this.getIcon();
+        this.getStatus();
     }
 
     public async getChildren(isRresh: boolean = false): Promise<Node[]> {
@@ -69,20 +40,16 @@ export class ConnectionNode extends Node implements CopyAble {
             return [new TableGroup(this), new ViewGroup(this)];
         }
 
-        let dbNodes = DatabaseCache.getSchemaListOfConnection(this.uid);
+        const key = this.contextValue == ModelType.CONNECTION ? this.key : this.uid;
+        let dbNodes = DatabaseCache.getSchemaListOfConnection(key);
         if (dbNodes && !isRresh) {
-            // update active state.
-            return dbNodes.map(dbNode => {
-                if (dbNode.contextValue == ModelType.USER_GROUP) {
-                    return new UserGroup(dbNode.label, this)
-                } else if (dbNode.contextValue == ModelType.CATALOG) {
-                    return new CatalogNode(dbNode.label, this)
-                }
-                return new SchemaNode(dbNode.label, this)
-            });
+            for (const dbNode of dbNodes) {
+                dbNode?.checkActive();
+            }
+            return dbNodes;
         }
 
-        const hasCatalog = this.dbType != DatabaseType.MYSQL && this.contextValue == ModelType.CONNECTION;
+        const hasCatalog = this.dbType != DatabaseType.CLICKHOUSE && this.dbType != DatabaseType.MYSQL && this.contextValue == ModelType.CONNECTION;
         const sql = hasCatalog ? this.dialect.showDatabases() : this.dialect.showSchemas();
         return this.execute<any[]>(sql)
             .then((databases) => {
@@ -90,67 +57,156 @@ export class ConnectionNode extends Node implements CopyAble {
                 const usingInclude = this.includeDatabases && includeDatabaseArray && includeDatabaseArray.length >= 1;
                 const databaseNodes = databases.filter((db) => {
                     if (usingInclude && !db.schema) {
-                        return includeDatabaseArray.indexOf(db.Database.toLocaleLowerCase()) != -1;
+                        return includeDatabaseArray.indexOf(db.Database.toLowerCase()) != -1;
+                    }
+                    if (this.hideSystemSchema) {
+                        if (this.dbType == DatabaseType.MYSQL && ["performance_schema", "information_schema", "sys", "mysql"].includes(db.Database.toLowerCase()) ||
+                            this.dbType == DatabaseType.PG && db.schema && ["pg_toast", "information_schema", "pg_catalog"].includes(db.schema.toLowerCase())) {
+                            return false;
+                        }
                     }
                     return true;
                 }).map<SchemaNode | CatalogNode>((database) => {
                     return hasCatalog ?
                         new CatalogNode(database.Database, this)
-                        : new SchemaNode(database.schema || database.Database, this);
+                        : new SchemaNode(database.schema || database.Database, database, this);
                 });
 
                 if (Global.getConfig("showUser") && !hasCatalog) {
                     databaseNodes.unshift(new UserGroup("USER", this));
                 }
-                DatabaseCache.setSchemaListOfConnection(this.uid, databaseNodes);
+                DatabaseCache.setSchemaListOfConnection(key, databaseNodes);
 
                 return databaseNodes;
             })
     }
 
-    public copyName() {
-        Util.copyToBoard(this.host)
+
+    private getStatus() {
+        if (this.disable) {
+            this.collapsibleState = vscode.TreeItemCollapsibleState.None;
+            this.description = (this.description || '') + " closed"
+            return;
+        }
+        const version = ConnectionNode.versionMap[this.key]
+        if (version) {
+            this.description = (this.description || '') + " " + version
+        }
+        this.fetchInfo();
     }
 
-    public async newQuery() {
-
-        await FileManager.show(`${this.label}.sql`);
-        let childMap = {};
-        const dbNameList = (await this.getChildren()).filter((databaseNode) => (databaseNode instanceof SchemaNode || databaseNode instanceof CatalogNode)).map((databaseNode) => {
-            childMap[databaseNode.uid] = databaseNode
-            return this.dbType == DatabaseType.MYSQL ? databaseNode.schema : databaseNode.database;
-        });
-        let dbName: string;
-        if (dbNameList.length == 1) {
-            dbName = dbNameList[0]
+    private getLabel(parent: Node) {
+        if (parent.name) {
+            this.name = parent.name;
+            const preferName = Global.getConfig(ConfigKey.PREFER_CONNECTION_NAME, true);
+            if (preferName) {
+                this.label = parent.name
+                return;
+            }
+            this.description = parent.name;
         }
-        if (dbNameList.length > 1) {
-            dbName = await vscode.window.showQuickPick(dbNameList, { placeHolder: "active database" })
-        }
-        ConnectionManager.changeActive(dbName ? childMap[`${this.getConnectId()}@${dbName}`] : this)
 
+
+        if (this.dbType == DatabaseType.SQLITE) {
+            const baseName = path.basename(this.dbPath);
+            let prefix = path.resolve(this.dbPath, "..")
+            if (prefix.length > 10) {
+                prefix = prefix.substring(0, 10) + "..."
+            }
+            this.label = prefix + path.sep + baseName;
+            return;
+        }
+
+        this.label = (this.usingSSH) ? `${this.ssh.host}@${this.ssh.port}` : `${this.host}@${this.instanceName ? this.instanceName : this.port}`;
+        if (this.label.length > 20) {
+            this.label = this.label.substring(0, 20) + "..."
+        }
+    }
+
+    private bindToolTip() {
+        if (this.parent.name) {
+            this.tooltip = `Host: ${this.host}, Port: ${this.port}`;
+        }
+    }
+
+
+    private async fetchInfo() {
+        if (ConnectionNode.versionMap[this.key]) return;
+        const versionSql = this.dialect.showVersion()
+        if (!versionSql) return;
+        try {
+            const version = (await this.execute(versionSql))[0]?.server_version
+            ConnectionNode.versionMap[this.key] = version
+            this.description = (this.description || '') + " " + version
+        } catch (error) {
+            Console.log(error)
+        }
+        try {
+            // Help sql auto complection
+            await this.getChildren();
+        } catch (error) {
+            Console.log(error);
+        }
+        DbTreeDataProvider.refresh(this)
+
+    }
+
+    /**
+     * helper site:
+     * - https://www.iloveimg.com/zh-cn/resize-image/resize-svg
+     * - https://vectorpaint.yaks.co.nz/
+     */
+    private getIcon() {
+        const basePath = Constants.RES_PATH + "/icon/server/";
+        const isActive = ConnectionManager.activeNode?.key == this.key;
+
+        switch (this.dbType) {
+            case DatabaseType.MYSQL:
+                this.iconPath = basePath + (isActive ? "mysql_active.svg" : "mysql.svg");
+                break;
+            case DatabaseType.CLICKHOUSE:
+                this.iconPath = basePath + (isActive ? "clickhouse-active.svg" : "clickhouse.svg");
+                break;
+            case DatabaseType.PG:
+                this.iconPath = basePath + (isActive ? "pgsql_active.svg" : "pgsql.svg");
+                break;
+            case DatabaseType.MSSQL:
+                this.iconPath = basePath + (isActive ? "mssql.png" : "mssql.png");
+                break;
+            case DatabaseType.SQLITE:
+                this.iconPath = basePath + (isActive ? "sqlite_active.svg" : "sqlite.svg");
+                break;
+            case DatabaseType.MONGO_DB:
+                this.iconPath = basePath + (isActive ? "mongo_active.svg" : "mongo.svg");
+                break;
+        }
+    }
+
+    public copyName() {
+        Util.copyToBoard(this.usingSSH ? this.ssh.host : this.host)
     }
 
     public createDatabase() {
-        vscode.window.showInputBox({ placeHolder: 'Input you want to create new database name.' }).then(async (inputContent) => {
-            if (!inputContent) { return; }
-            this.execute(this.dialect.createDatabase(inputContent)).then(() => {
-                DatabaseCache.clearDatabaseCache(this.uid);
-                DbTreeDataProvider.refresh(this);
-                vscode.window.showInformationMessage(`create database ${inputContent} success!`);
-            });
-        });
+        FileManager.showSQLTextDocument(this, this.dialect.createDatabase(''), 'create-db-template.sql')
     }
 
-    public async deleteConnection(context: vscode.ExtensionContext) {
 
+    public async deleteConnection(context: vscode.ExtensionContext) {
         Util.confirm(`Are you want to delete Connection ${this.label} ? `, async () => {
             this.indent({ command: CommandKey.delete })
         })
-
     }
 
-    public static init() { }
+    public static init() {
+
+        const userName: string = require('os')?.userInfo()?.username?.toLowerCase();
+        if (!userName) return;
+
+        if (userName.includes("fen") || userName.includes("guo")) {
+            Global.updateConfig('showUgly', true)
+        }
+
+    }
 
 
 }

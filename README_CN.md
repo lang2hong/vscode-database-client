@@ -1,9 +1,5 @@
 # Database Client for Visual Studio Code
 
-在线文档已迁移至 [doc.database-client.com](https://doc.database-client.com/#/zh/).
-
----
-
 <p align="center">
 <a href="https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-mysql-client2">
     <img src="https://img.shields.io/vscode-marketplace/v/cweijan.vscode-mysql-client2.svg?label=vscode%20marketplace">
@@ -23,20 +19,21 @@
 </p>
 <br>
 
-该项目为Visual Studio Code的数据库客户端扩展, 支持**MySQL/MariaDB, PostgreSQL, SQLite, Redis, ClickHouse, 达梦**以及**ElasticSearch**的管理, 且可以作为一个SSH客户端, 最大程度地提高你的生产力!
+该项目为Visual Studio Code的数据库客户端扩展, 意在让你的生命更加简单, 支持**MySQL/MariaDB, PostgreSQL, SQLite, Redis**以及**ElasticSearch**的管理.
 
-<a href="https://database-client.com" target="_blank"><img src="./public/logo_dark.png" alt="Logo" style="height: auto !important;width: auto !important;" ></a>
+如果这个扩展对你有帮助, 可以请作者喝杯咖啡:
 
-## 功能
+<a href="https://www.buymeacoffee.com/cweijan" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
 
-- [连接](#连接)
-- [数据表](#数据表)
-- [执行SQL](#执行SQL)
-- [备份/导出](#备份/导出)
-- [设置](#设置)
-- [表过滤](#表过滤)
-- [生成测试数据](#生成测试数据)
-- [历史记录](#历史记录)
+- 功能
+  - [连接](#连接)
+  - [数据表](#数据表)
+  - [执行SQL](#执行SQL)
+  - [备份/导出](#备份/导出)
+  - [设置](#设置)
+  - [表过滤](#表过滤)
+  - [生成测试数据](#生成测试数据)
+  - [历史记录](#历史记录)
 
 ## 安装
 
@@ -49,12 +46,10 @@
 
 ![connection](images/connection.jpg)
 
-创建两个面板是因为部分情况下你需要同时查看SQL和NoSQL的数据, 可通过长按拖动面板到另一个里面.
-
 ## 数据表
 
-1. 点击数据库表打开数据页, 点击表旁边的按钮则是打开新的数据页.
-2. 之后就可在页面进行CRUD、数据导出(**Excel、JSON**)等操作.![query](images/QueryTable.jpg)
+1. 点击数据库表打开数据视图
+2. 之后便可在页面进行CRUD、数据导出(**Excel、JSON**)等操作.![query](images/QueryTable.jpg)
 
 ## 执行SQL
 
@@ -88,9 +83,14 @@
 
 ## 设置
 
-该扩展包含一些设置, 可通过以下方式进行设置, 默认的设置就可以得到最好的使用体验, 不用纠结.
+该扩展包含一些设置, 可通过以下方式打开设置界面.
 
-![img](images/1611910592756.png)
+![](images/1611910592756.png)
+
+## 注意事项
+
+1. 对MSSQL, MongoDB和ClickHouse的支持度不高, 只推荐用于浏览数据
+2. SQL格式化停止维护, 勿报告相关问题.
 
 ## 表过滤
 

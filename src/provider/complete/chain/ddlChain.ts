@@ -1,4 +1,5 @@
 import { ModelType } from "@/common/constants";
+import { ConnectionManager } from "@/service/connectionManager";
 import * as vscode from "vscode";
 import { CompletionItem } from "vscode";
 import { ComplectionContext } from "../complectionContext";
@@ -7,7 +8,7 @@ import { BaseChain } from "./baseChain";
 export class DDLChain extends BaseChain {
 
     private keywordComplectionItems: vscode.CompletionItem[] = this.strToComplection(["Table", "Procedure", "View", "Function", "Trigger"])
-    private typeList: vscode.CompletionItem[] = this.strToComplection(["INTEGER", "CHAR", "VARCHAR", "DECIMAL", "SMALLINT", "TINYINT", "MEDIUMINT", "BIGINT", "CHARACTER",
+    private typeList: vscode.CompletionItem[] = this.strToComplection(["INTEGER", "CHAR", "VARCHAR", "DECIMAL", "SMALLINT","JSON", "TINYINT", "MEDIUMINT", "BIGINT", "CHARACTER",
         "NUMERIC", "BIT", "INT", "FLOAT", "DOUBLE", "TEXT", "SET", "BLOB", "TIMESTAMP", "DATE", "TIME", "YEAR", "DATETIME"], vscode.CompletionItemKind.Variable);
 
     async getComplection(complectionContext: ComplectionContext): Promise<CompletionItem[]> {
@@ -35,6 +36,9 @@ export class DDLChain extends BaseChain {
                         "DEFAULT", "COMMENT", "UNIQUE", "KEY", "FOREIGN", "CASCADE", "RESTRICT", "UNSIGNED", "CURRENT_TIMESTAMP"]).concat(this.typeList)
             }
         } else {
+            if(ConnectionManager.tryGetConnection()==null){
+                return null;
+            }
             let modelType: ModelType;
             switch (secondToken) {
                 case 'table':

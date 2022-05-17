@@ -18,14 +18,13 @@ const extPackage=require("@/../package.json")
  */
 export class EsConnectionNode extends Node {
 
-    private static versionMap = {}
     public iconPath: string|ThemeIcon = path.join(Constants.RES_PATH, "icon/elasticsearch.svg");
     public contextValue: string = ModelType.ES_CONNECTION;
     constructor(readonly key: string, readonly parent: Node) {
         super(key)
         this.init(parent)
         if(compareVersions(extPackage.version,'3.6.6')===1){
-            this.label = (this.usingSSH) ? `${this.ssh.host}@${this.ssh.port}` : `${this.host}`;
+            this.label = (this.usingSSH) ? `${this.ssh.host}@${this.ssh.port}` : `${this.host.replace(/(http:\/\/|https:\/\/)/,'')}`;
         }else{
             this.label = (this.usingSSH) ? `${this.ssh.host}@${this.ssh.port}` : `${this.host}@${this.port}`;
         }
@@ -45,27 +44,27 @@ export class EsConnectionNode extends Node {
             return;
         }
 
-        if (EsConnectionNode.versionMap[this.label]) {
-            this.description = EsConnectionNode.versionMap[this.label]
+        if (EsConnectionNode.versionMap[this.key]) {
+            this.description = EsConnectionNode.versionMap[this.key]
         } else {
             this.execute<any>('get /').then(res => {
-                this.description=`version: ${res.version.number}`
-                EsConnectionNode.versionMap[this.label]=this.description
+                this.description=res.version.number
+                EsConnectionNode.versionMap[this.key]=this.description
                 DbTreeDataProvider.refresh(this)
             }).catch(err=>{
                 console.log(err)
             })
         }
 
-        if (this.isActive(lcp)) {
-            this.description = `${this.description}   Active`;
-        }
+        const basePath = Constants.RES_PATH + "/icon/server/";
+        this.iconPath = basePath + (this.isActive(lcp) ? "elasticsearch_active.svg": "elasticsearch.svg" );
 
     }
 
 
     newQuery() {
-        QueryUnit.showSQLTextDocument(this,EsTemplate.query,`${this.host}.es`)
+        QueryUnit.showSQLTextDocument(this,EsTemplate.query,`${this.host.replace(/^(http|https):/,'').replace(/\//g,'')}.es`)
+        ConnectionManager.changeActive(this)
     }
 
     async getChildren(): Promise<Node[]> {
@@ -75,12 +74,12 @@ export class EsConnectionNode extends Node {
     }
 
     public copyName() {
-        Util.copyToBoard(this.host)
+        Util.copyToBoard(this.usingSSH ? this.ssh.host : this.host)
     }
 
     public async deleteConnection(context: ExtensionContext) {
 
-        Util.confirm(`Are you want to Delete Connection ${this.label} ? `, async () => {
+        Util.confirm(`Are you want to Remove Connection ${this.label} ? `, async () => {
             this.indent({command:CommandKey.delete})
         })
 

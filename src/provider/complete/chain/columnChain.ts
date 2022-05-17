@@ -10,10 +10,14 @@ export class ColumnChain implements ComplectionChain {
     private needStop = true;
     public async getComplection(context: ComplectionContext): Promise<vscode.CompletionItem[]> {
 
+        if(ConnectionManager.tryGetConnection()==null){
+            return []
+        }
+
         if (context.currentToken?.content === ".") {
             let subComplectionItems = await this.generateColumnComplectionItem(context.previousToken?.content);
             if (subComplectionItems != null && subComplectionItems.length > 0) { this.needStop = true }
-            const tableReg = new RegExp(Pattern.TABLE_PATTERN + "(?=\\s*\\b" + context.previousToken?.content + "\\b)", "ig");
+            const tableReg = new RegExp(`${Pattern.TABLE_PATTERN}(?=${Pattern.ALIAS_PATTERN}\\b${context.previousToken?.content}\\b)`, "ig");
             let result = tableReg.exec(context.sqlBlock.sql);
             while (result != null && subComplectionItems.length === 0) {
                 subComplectionItems = await this.generateColumnComplectionItem(
@@ -57,7 +61,7 @@ export class ColumnChain implements ComplectionChain {
 
         const tableSplit = tableName.split(".")
         if (tableSplit.length == 2) {
-            const connectcionid = lcp?.getConnectId({ schema: tableSplit[0], withSchema: true });
+            const connectcionid = lcp?.getUid({ schema: tableSplit[0], withSchema: true });
             lcp = ColumnNode.nodeCache[connectcionid]
             tableName = tableSplit[1]
         }

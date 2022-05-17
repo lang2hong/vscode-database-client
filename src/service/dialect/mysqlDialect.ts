@@ -1,9 +1,13 @@
+import { ColumnMeta } from "@/common/typeDef";
 import { CreateIndexParam } from "./param/createIndexParam";
 import { UpdateColumnParam } from "./param/updateColumnParam";
 import { UpdateTableParam } from "./param/updateTableParam";
 import { SqlDialect } from "./sqlDialect";
 
 export class MysqlDialect extends SqlDialect {
+    showVersion(){
+        return "select @@version server_version;";
+    }
     createIndex(createIndexParam: CreateIndexParam): string {
         return `ALTER TABLE ${createIndexParam.table} ADD ${createIndexParam.type} (${createIndexParam.column})`;
     }
@@ -11,7 +15,7 @@ export class MysqlDialect extends SqlDialect {
         return `ALTER TABLE ${table} DROP INDEX ${indexName}`
     }
     showIndex(database: string, table: string): string {
-        return `SELECT column_name,index_name,non_unique,index_type FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema='${database}' and table_name='${table}';`
+        return `SELECT column_name column_name,index_name index_name,non_unique non_unique,index_type index_type FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema='${database}' and table_name='${table}';`
     }
     variableList(): string {
         return 'show global VARIABLES'
@@ -22,25 +26,29 @@ export class MysqlDialect extends SqlDialect {
     processList(): string {
         return 'show processlist'
     }
-    addColumn(table: string): string {
+    addColumn(table: string,column?:string): string {
+        const after=column?` AFTER \`${column}\``:"";
         return `ALTER TABLE
-        ${table} 
-    ADD 
-        COLUMN [column] [type] NOT NULL comment '';`;
+    ${table} 
+ADD 
+    COLUMN [column] [type] NOT NULL comment ''${after};`;
     }
     createUser(): string {
         return `CREATE USER 'username'@'%' IDENTIFIED BY 'password';`;
     }
-    updateColumn(table: string, column: string, type: string, comment: string, nullable: string): string {
-        const defaultDefinition = nullable == "YES" ? "" : " NOT NULL";
-        comment = comment ? ` comment '${comment}'` : "";
-        return `ALTER TABLE\n\t${table} CHANGE ${column} ${column} ${type}${defaultDefinition}${comment};`;
+    updateColumn(table: string, column: ColumnMeta): string {
+        let { name, type, comment, nullable, defaultValue } = column;
+        nullable = nullable == "YES" ? "" : " NOT NULL";
+        comment = comment ? ` COMMENT '${comment}'` : "";
+        defaultValue = defaultValue ? ` DEFAULT ${defaultValue == 'CURRENT_TIMESTAMP' ? defaultValue : `'${defaultValue}'`}` : "";
+        return `ALTER TABLE\n\t${table} CHANGE ${name} ${name} ${type}${nullable}${comment}${defaultValue};`;
     }
     updateColumnSql(updateColumnParam: UpdateColumnParam): string {
-        let {columnName,columnType,newColumnName,comment,nullable,table}=updateColumnParam
-        const defaultDefinition = nullable ? "" : " NOT NULL";
+        let { columnName, columnType, newColumnName, comment, nullable, table, defaultValue } = updateColumnParam
+        const nullableDefinition = nullable ? "" : " NOT NULL";
         comment = comment ? ` comment '${comment}'` : "";
-        return `ALTER TABLE\n\t${table} CHANGE ${columnName} ${newColumnName} ${columnType}${defaultDefinition}${comment};`;
+        defaultValue = defaultValue ? ` DEFAULT ${defaultValue == 'CURRENT_TIMESTAMP' ? defaultValue : `'${defaultValue}'`}` : "";
+        return `ALTER TABLE ${table} CHANGE ${columnName} ${newColumnName} ${columnType}${nullableDefinition}${comment}${defaultValue};`;
     }
     showUsers(): string {
         return `SELECT concat(user,'@',host) user FROM mysql.user;`;
@@ -67,7 +75,8 @@ export class MysqlDialect extends SqlDialect {
         return `SELECT Concat('TRUNCATE TABLE \`',table_schema,'\`.\`',TABLE_NAME, '\`;') trun FROM INFORMATION_SCHEMA.TABLES where  table_schema ='${database}' and TABLE_TYPE<>'VIEW';`
     }
     createDatabase(database: string): string {
-        return `create database \`${database}\` default character set = 'utf8mb4' `;
+        return `CREATE DATABASE [name]
+    DEFAULT CHARACTER SET = 'utf8mb4';`;
     }
     showTableSource(database: string, table: string): string {
         return `SHOW CREATE TABLE \`${database}\`.\`${table}\`;`
@@ -106,18 +115,18 @@ export class MysqlDialect extends SqlDialect {
         return `SELECT count(*) FROM ${table};`;
     }
     showTables(database: string): string {
-        return `SELECT table_comment \`comment\`,TABLE_NAME as \`name\`,TABLE_ROWS \`rows\`,auto_increment,\`row_format\`,data_length,index_length FROM information_schema.TABLES  WHERE TABLE_SCHEMA = '${database}' and TABLE_TYPE<>'VIEW' order by table_name;`
+        return `SELECT TABLE_COMMENT "comment",TABLE_NAME "name",TABLE_ROWS "table_rows",AUTO_INCREMENT "auto_increment",row_format "row_format",DATA_LENGTH "data_length",INDEX_LENGTH "index_length" FROM information_schema.TABLES  WHERE TABLE_SCHEMA = '${database}' and TABLE_TYPE<>'VIEW' ORDER BY TABLE_NAME;`
     }
     showSchemas(): string {
-        return "show databases"
+        return "SELECT SCHEMA_NAME `Database`,DEFAULT_CHARACTER_SET_NAME `charset`,DEFAULT_COLLATION_NAME `collation` FROM information_schema.schemata ORDER BY `Database`;"
     }
     tableTemplate(): string {
         return `CREATE TABLE [name](  
-    id int NOT NULL primary key AUTO_INCREMENT comment 'primary key',
-    create_time DATETIME COMMENT 'create time',
-    update_time DATETIME COMMENT 'update time',
-    [column] varchar(255) comment ''
-) default charset utf8 comment '';`
+    id int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT 'Primary Key',
+    create_time DATETIME COMMENT 'Create Time',
+    update_time DATETIME COMMENT 'Update Time',
+    [column] VARCHAR(255) COMMENT ''
+) DEFAULT CHARSET UTF8 COMMENT '';`
     }
     viewTemplate(): string {
         return `CREATE VIEW [name]

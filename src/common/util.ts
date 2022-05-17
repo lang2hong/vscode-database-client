@@ -99,11 +99,11 @@ export class Util {
         return vscode.Uri.file(join(Constants.RES_PATH, ...paths))
     }
 
-    public static getStore(key: string): any {
-        return GlobalState.get(key);
+    public static getStore<T>(key: string, defaultValue?: T): T {
+        return GlobalState.get(key,defaultValue);
     }
-    public static store(key: string, object: any) {
-        GlobalState.update(key, object)
+    public static store(key: string, object: any) : Thenable<void>{
+        return GlobalState.update(key, object)
     }
 
     public static is(object: any, type: string): boolean {
@@ -128,6 +128,11 @@ export class Util {
         }
 
         return this.supportColor;
+    }
+
+    
+    public static limitTitle(title: string): string {
+        return title.length<=30?title:title.substring(0,25)+"...";
     }
 
     public static execute(command: string): Promise<void> {

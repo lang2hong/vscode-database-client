@@ -37,7 +37,7 @@
         </template>
       </ux-table-column>
     </ux-grid>
-    <el-dialog :title="'Update Column'" :visible.sync="column.editVisible" top="3vh" size="mini">
+    <el-dialog :title="'Update Column'" :visible.sync="column.editVisible" top="3vh" size="mini" :closeOnClickModal="false">
       <el-form :inline='true'>
         <el-form-item label="Name">
           <el-input v-model="editColumn.name"></el-input>
@@ -48,6 +48,11 @@
         <el-form-item label="Comment">
           <el-input v-model="editColumn.comment"></el-input>
         </el-form-item>
+        <template v-if="designData.dbType=='MySQL'">
+          <el-form-item label="Default Value">
+            <el-input v-model="editColumn.defaultValue"></el-input>
+          </el-form-item>
+        </template>
         <el-form-item label="Not Null">
           <el-checkbox v-model="editColumn.isNotNull"></el-checkbox>
         </el-form-item>
@@ -57,7 +62,7 @@
         <el-button @click="column.editVisible=false">Cancel</el-button>
       </span>
     </el-dialog>
-    <el-dialog :title="'Add Column'" :visible.sync="column.visible" top="3vh" size="mini">
+    <el-dialog :title="'Add Column'" :visible.sync="column.visible" top="3vh" size="mini" :closeOnClickModal="false">
       <el-form :inline='true'>
         <el-form-item label="Name">
           <el-input v-model="column.name"></el-input>
@@ -127,6 +132,7 @@ export default {
       this.emit("updateColumn", {
         newColumnName: this.editColumn.name,
         columnType: this.editColumn.type,
+        defaultValue: this.editColumn.defaultValue,
         comment: this.editColumn.comment,
         nullable: !this.editColumn.isNotNull,
         table: this.designData.table,

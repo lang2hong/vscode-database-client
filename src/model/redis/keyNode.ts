@@ -1,9 +1,9 @@
-import { Constants, ModelType, RedisType } from "@/common/constants";
+import { CodeCommand, Constants, ModelType, RedisType } from "@/common/constants";
 import { Util } from "@/common/util";
 import { ViewManager } from "@/common/viewManager";
 import { Node } from "@/model/interface/node";
 import * as path from "path";
-import { ThemeIcon, TreeItemCollapsibleState } from "vscode";
+import { commands, ThemeIcon, TreeItemCollapsibleState, window } from "vscode";
 import RedisBaseNode from "./redisBaseNode";
 
 export default class KeyNode extends RedisBaseNode {
@@ -11,7 +11,7 @@ export default class KeyNode extends RedisBaseNode {
     readonly contextValue = ModelType.REDIS_KEY;
     readonly iconPath = new ThemeIcon("key");
     readonly iconDetailPath = path.join(Constants.RES_PATH, `image/redis_connection.png`);
-    constructor(readonly label: string, readonly prefix: string, readonly parent: Node) {
+    constructor(public label: string, readonly prefix: string, readonly parent: Node) {
         super(label);
         this.init(parent)
         this.collapsibleState = TreeItemCollapsibleState.None
@@ -29,12 +29,20 @@ export default class KeyNode extends RedisBaseNode {
         return [];
     }
 
-    public async delete() {
-        Util.confirm(`Are you want delete key ${this.label} ? `, async () => {
-            const client = await this.getClient();
-            await client.del(this.label)
-            this.provider.reload()
-        })
+    public async delete(keyNodeList: KeyNode[]) {
+        if (keyNodeList) {
+            Util.confirm('Do you want to delete all the selected keys' , async () => {
+                const client = await this.getClient();
+                await Promise.all(keyNodeList.filter(n=>n instanceof KeyNode).map(n => client.del(n.label)))
+                this.provider.reload()
+            })
+        } else {
+            Util.confirm( `Do you want to delete the key ${this.label} ?`, async () => {
+                const client = await this.getClient();
+                await client.del(this.label)
+                this.provider.reload()
+            })
+        }
     }
 
 
@@ -60,8 +68,16 @@ export default class KeyNode extends RedisBaseNode {
                 content = await client.smembers(this.label)
                 break;
             case RedisType.zset:
-                content = await client.zrange(this.label, 0, await client.zcard(this.label))
+                content = await client.zrange(this.label, 0, await client.zcard(this.label), 'WITHSCORES')
+                if (content && content instanceof Array) {
+                    content = content.filter((_, i) => i % 2 == 0).map((value, i) => ({
+                        value, score: content[i * 2 + 1]
+                    }))
+                }
                 break;
+                default:
+                    window.showErrorMessage(`Unsupport type ${type}!`)
+                    return;
         }
         const title = `${type}:${this.label}`;
 
@@ -72,7 +88,7 @@ export default class KeyNode extends RedisBaseNode {
                 handler.on("init", () => {
                     handler.emit("route", 'keyView')
                 }).on("route-keyView", async () => {
-                    handler.panel.title = title
+                    handler.panel.title = Util.limitTitle(title)
                     handler.emit("detail", {
                         res: {
                             content, type, name: this.label,
@@ -82,15 +98,28 @@ export default class KeyNode extends RedisBaseNode {
                 }).on("refresh", () => {
                     this.detail()
                 }).on("update", async (content) => {
+                    let curKey=content.key.name;
+                    let newKey=content.key.newName;
+                    if(curKey != newKey){
+                        await client.rename(curKey,newKey)
+                        curKey=newKey;
+                        this.label=newKey;
+                    }
                     switch (content.key.type) {
                         case 'string':
-                            await client.set(content.key.name, content.key.content)
-                            handler.emit("msg", `Update key ${content.key.name} to new value success!`)
+                            await client.set(curKey, content.key.content)
+                            handler.emit("msg", `Update key ${curKey} to new value success!`)
+                            if(newKey){
+                                this.detail()
+                                commands.executeCommand(CodeCommand.Refresh,this.parent)
+                            }
                             break;
                     }
                 }).on("rename", async (content) => {
                     await client.rename(content.key.name, content.key.newName)
+                    this.label=content.key.newName
                     this.detail()
+                    this.provider.reload(this.parent)
                 }).on("del", async (content) => {
                     await client.del(content.key.name)
                 }).on("ttl", async (content) => {

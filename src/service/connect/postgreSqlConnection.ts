@@ -11,12 +11,16 @@ export class PostgreSqlConnection extends IConnection {
     private client: Client;
     constructor(node: Node) {
         super()
+        if (node.useConnectionString) {
+            this.client = new Client(node.connectionUrl)
+            return;
+        }
         let config = {
             host: node.host, port: node.port,
             user: node.user, password: node.password,
             database: node.database,
             connectionTimeoutMillis: node.connectTimeout || 5000,
-            statement_timeout: node.requestTimeout || 10000,
+            statement_timeout: node.requestTimeout || undefined,
         } as ClientConfig;
         if (node.useSSL) {
             config.ssl = {
@@ -43,7 +47,7 @@ export class PostgreSqlConnection extends IConnection {
         const event = new EventEmitter()
         this.client.query(sql, (err, res) => {
             if (err) {
-                if(callback) callback(err)
+                if (callback) callback(err)
                 this.end()
                 event.emit("error", err.message)
             } else if (!callback) {
@@ -64,10 +68,15 @@ export class PostgreSqlConnection extends IConnection {
         })
         return event;
     }
-    
+
     adaptResult(res: QueryArrayResult<any>) {
-        if (res.command != 'SELECT' && res.command != 'SHOW') {
+        if (res.command == 'DELETE' || res.command == 'UPDATE' || res.command == "INSERT") {
             return { affectedRows: res.rowCount }
+        }
+        if (res.command != 'SELECT' && res.command != 'SHOW') {
+            if (res.rows && res.rows instanceof Array) {
+                return res.rows;
+            }
         }
         return res.rows;
     }

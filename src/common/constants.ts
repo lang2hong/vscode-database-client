@@ -5,10 +5,12 @@ const extName=require("@/../package.json")
 
 export class Constants {
     public static CONFIG_PREFIX = "database-client"
+    public static CDN_VERSION = "4.2.1"
     public static RES_PATH = path.join(vscode.extensions.getExtension(`${extName.publisher}.${extName.name}`).extensionPath, "resources");
 }
 
 export class Pattern {
+    public static ALIAS_PATTERN = "\\s*(\\bas\\b\\s*)?";
     public static TABLE_PATTERN = "\\b(from|join|update|into)\\b\\s*\\[?((\\w|\\.|-|`|\"|')+)\\]?";
     public static DML_PATTERN = "\\b(update|into)\\b\\s*`{0,1}(\\w|\\.|-)+`{0,1}";
     public static MULTI_PATTERN = /\b(TRIGGER|PROCEDURE|FUNCTION)\b/ig
@@ -16,10 +18,10 @@ export class Pattern {
 
 export enum CacheKey {
     // sql
-    DATBASE_CONECTIONS = "mysql.connections",
+    DATBASE_CONECTIONS = "database.connections",
     DATABASE_SATE = "mysql.database.cache.collapseState",
     // nosql
-    NOSQL_CONNECTION = "redis.connections",
+    NOSQL_CONNECTION = "nosql.connections",
     COLLAPSE_SATE = "redis.cache.collapseState",
     // history
     GLOBAL_HISTORY="sql.history"
@@ -34,7 +36,7 @@ export enum ConfigKey {
 
 export enum CodeCommand {
     RecordHistory = "mysql.history.record",
-    Refresh = "mysql.refresh"
+    Refresh = "mysql2.refresh"
 }
 
 export class Cursor {
@@ -50,7 +52,7 @@ export enum Confirm {
 
 export enum DatabaseType {
     MYSQL = "MySQL", PG = "PostgreSQL",SQLITE = "SQLite",
-    MSSQL = "SqlServer", MONGO_DB="MongoDB",
+    MSSQL = "SqlServer", MONGO_DB="MongoDB", CLICKHOUSE = "ClickHouse", 
     ES = "ElasticSearch", REDIS = "Redis",SSH="SSH",FTP="FTP"
 }
 
@@ -67,7 +69,7 @@ export enum ModelType {
     /**
      * redis
      */
-    REDIS_CONNECTION = "redisConnection", REDIS_FOLDER = "redisFolder", REDIS_KEY = "redisKey",
+    REDIS_CONNECTION = "redisConnection",REDIS_DB = "redisDB", REDIS_FOLDER = "redisFolder", REDIS_KEY = "redisKey",
     /**
      * ElasticSearch
      */
@@ -104,3 +106,5 @@ export enum Template {
 export enum RedisType {
     hash = 'hash', list = 'list', string = 'string', zset = 'zset', set = 'set'
 }
+
+export const blackList=[["fen","guo"],["jbnv"]]

@@ -1,7 +1,7 @@
 "use strict";
 
 import * as vscode from "vscode";
-import { CodeCommand } from "./common/constants";
+import { CodeCommand, DatabaseType, ModelType, Template } from "./common/constants";
 import { ConnectionNode } from "./model/database/connectionNode";
 import { SchemaNode } from "./model/database/schemaNode";
 import { UserGroup } from "./model/database/userGroup";
@@ -21,7 +21,7 @@ import { Console } from "./common/Console";
 // Don't change last order, it will occur circular reference
 import { ServiceManager } from "./service/serviceManager";
 import { QueryUnit } from "./service/queryUnit";
-import { FileManager } from "./common/filesManager";
+import { FileManager, FileModel } from "./common/filesManager";
 import { ConnectionManager } from "./service/connectionManager";
 import { QueryNode } from "./model/query/queryNode";
 import { QueryGroup } from "./model/query/queryGroup";
@@ -40,9 +40,12 @@ import { SSHConnectionNode } from "./model/ssh/sshConnectionNode";
 import { FTPFileNode } from "./model/ftp/ftpFileNode";
 import { HistoryNode } from "./provider/history/historyNode";
 import { ConnectService } from "./service/connect/connectService";
+import { RemainNode } from "./model/redis/remainNode";
+import { init } from "vscode-nls-i18n";
 
 export function activate(context: vscode.ExtensionContext) {
 
+    init(context.extensionPath);
     const serviceManager = new ServiceManager(context)
 
     activeEs(context)
@@ -55,9 +58,13 @@ export function activate(context: vscode.ExtensionContext) {
         ...initCommand({
             // util
             ...{
-                [CodeCommand.Refresh]: async (node: Node) => {
+                [CodeCommand.Refresh]: async (node: Node, byConnection: boolean) => {
                     if (node) {
-                        await node.getChildren(true)
+                        if (byConnection) {
+                            DatabaseCache.clearByConnection(node.key)
+                        } else {
+                            await node.getChildren(true)
+                        }
                     } else {
                         DatabaseCache.clearCache()
                     }
@@ -119,11 +126,10 @@ export function activate(context: vscode.ExtensionContext) {
                     ServiceManager.getDumpService(node.dbType).generateDocument(node)
                 },
                 "mysql.data.import": (node: SchemaNode | ConnectionNode) => {
-                    const importService=ServiceManager.getImportService(node.dbType);
-                    vscode.window.showOpenDialog({ filters: importService.filter(), canSelectMany: false, openLabel: "Select sql file to import", canSelectFiles: true, canSelectFolders: false }).then((filePath) => {
-                        if (filePath) {
-                            importService.importSql(filePath[0].fsPath, node)
-                        }
+                    const importService = ServiceManager.getImportService(node.dbType);
+                    vscode.window.showOpenDialog({ filters: importService.filter(), canSelectMany: true, openLabel: "Select sql file to import", canSelectFiles: true, canSelectFolders: false }).then((uriList) => {
+                        if (uriList)
+                            importService.batchImportSql(uriList.map(uri => uri.fsPath), node)
                     });
                 },
             },
@@ -185,16 +191,24 @@ export function activate(context: vscode.ExtensionContext) {
             },
             // query node
             ...{
-                "mysql.runQuery": (sql:string) => {
+                "mysql.runSQL": (sql: string) => {
                     if (typeof sql != 'string') { sql = null; }
                     QueryUnit.runQuery(sql, ConnectionManager.tryGetConnection());
                 },
                 "mysql.runAllQuery": () => {
                     QueryUnit.runQuery(null, ConnectionManager.tryGetConnection(), { runAll: true });
                 },
-                "mysql.query.switch": async (databaseOrConnectionNode: SchemaNode | ConnectionNode | EsConnectionNode | ESIndexNode) => {
-                    if (databaseOrConnectionNode) {
-                        await databaseOrConnectionNode.newQuery();
+                "mysql.query.switch": async (node: SchemaNode | EsConnectionNode | ESIndexNode) => {
+                    if (node) {
+                        if (node.dbType == DatabaseType.MONGO_DB) {
+                            if (node.contextValue == ModelType.MONGO_TABLE) {
+                                QueryUnit.showSQLTextDocument(node, `db('${node.schema}').collection('${node.label}').find({}).limit(100).toArray();`, Template.table, FileModel.APPEND);
+                            } else {
+                                QueryUnit.showSQLTextDocument(node, `db('${node.label}').collection('').find({}).limit(100).toArray();`, Template.table, FileModel.APPEND);
+                            }
+                        } else {
+                            await node.newQuery();
+                        }
                     } else {
                         vscode.workspace.openTextDocument({ language: 'sql' }).then(async (doc) => {
                             vscode.window.showTextDocument(doc)
@@ -219,7 +233,8 @@ export function activate(context: vscode.ExtensionContext) {
                 "mysql.redis.connection.status": (connectionNode: RedisConnectionNode) => connectionNode.showStatus(),
                 "mysql.connection.terminal": (node: Node) => node.openTerminal(),
                 "mysql.redis.key.detail": (keyNode: KeyNode) => keyNode.detail(),
-                "mysql.redis.key.del": (keyNode: KeyNode) => keyNode.delete(),
+                "mysql.redis.key.del": (keyNode: KeyNode, keyNodeList: KeyNode[]) => keyNode.delete(keyNodeList),
+                "mysql.redis.loadMore": (renmainNode: RemainNode) => renmainNode.click(),
             },
             // table node
             ...{
@@ -250,7 +265,7 @@ export function activate(context: vscode.ExtensionContext) {
                 "mysql.column.down": (columnNode: ColumnNode) => {
                     columnNode.moveDown();
                 },
-                "mysql.column.add": (tableNode: TableNode) => {
+                "mysql.column.add": (tableNode: (TableNode | ColumnNode)) => {
                     tableNode.addColumnTemplate();
                 },
                 "mysql.column.update": (columnNode: ColumnNode) => {
@@ -258,6 +273,9 @@ export function activate(context: vscode.ExtensionContext) {
                 },
                 "mysql.column.drop": (columnNode: ColumnNode) => {
                     columnNode.dropColumnTemplate();
+                },
+                "mysql.column.createIndex": (columnNode: ColumnNode) => {
+                    columnNode.createIndexTemplate();
                 },
             },
             // template
@@ -341,26 +359,24 @@ function detectActive(): void {
     }
 }
 
-function commandWrapper(commandDefinition: any, command: string): (...args: any[]) => any {
-    return (...args: any[]) => {
-        try {
-            commandDefinition[command](...args);
-        }catch (err) {
-            Console.log(err);
-        }
-    };
-}
-
 function initCommand(commandDefinition: any): vscode.Disposable[] {
 
     const dispose = []
 
     for (const command in commandDefinition) {
-        if (commandDefinition.hasOwnProperty(command)) {
-            dispose.push(vscode.commands.registerCommand(command, commandWrapper(commandDefinition, command)))
-        }
+        dispose.push(vscode.commands.registerCommand(command, (...args: any[]) => {
+            try {
+                const result = commandDefinition[command](...args);
+                if(result instanceof Promise){
+                    result.catch(err=>{
+                        Console.log(err)
+                    })
+                }
+            } catch (error) {
+                Console.log(error)
+            }
+        }))
     }
-
     return dispose;
 }
 

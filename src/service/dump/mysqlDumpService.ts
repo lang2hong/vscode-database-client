@@ -6,6 +6,7 @@ import { ViewNode } from "@/model/main/viewNode";
 import { NodeUtil } from "@/model/nodeUtil";
 import { DumpService } from "./dumpService";
 import * as vscode from "vscode";
+import { exec } from "child_process";
 var commandExistsSync = require('command-exists').sync;
 
 export class MysqlDumpService extends DumpService {
@@ -21,10 +22,16 @@ export class MysqlDumpService extends DumpService {
                 NodeUtil.of(node)
                 const isTable = node instanceof TableNode || node instanceof ViewNode;
                 const host = node.usingSSH ? "127.0.0.1" : node.host
-                const port = node.usingSSH ? NodeUtil.getTunnelPort(node.getConnectId()) : node.port;
+                const port = node.usingSSH ? NodeUtil.getTunnelPort(node.key) : node.port;
                 const data = withData ? '' : ' --no-data';
                 const tables = isTable ? ` --skip-triggers ${node.label}` : '';
-                const command = `mysqldump -h ${host} -P ${port} -u ${node.user} -p${node.password}${data} --skip-add-locks ${node.schema} ${tables}>${folderPath.fsPath}`
+                const password = node.password ? ` -p${node.password}` : '';
+
+                const dumpVersion = await this.getDumpVersion()
+                const cs = dumpVersion.includes("8.0") ? ' --column-statistics=0' : '';
+
+                const command = `mysqldump -h ${host} -P ${port} -u ${node.user} ${password}${data}${cs} --skip-add-locks ${node.schema} ${tables}>${folderPath.fsPath}`;
+
                 // Console.log(`Executing: ${command}`);
                 Util.execute(command).then(() => {
                     vscode.window.showInformationMessage(`Backup ${node.getHost()}_${node.schema} success!`, 'open').then(action => {
@@ -38,6 +45,14 @@ export class MysqlDumpService extends DumpService {
         }
 
         return super.dump(node, withData);
+    }
+
+    private getDumpVersion(): Promise<string> {
+        return new Promise((res, rej) => {
+            exec("mysqldump --version", (err, stdout, stderr) => {
+                res(stdout)
+            })
+        });
     }
 
 }

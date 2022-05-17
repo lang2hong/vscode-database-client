@@ -1,5 +1,171 @@
 # CHANGELOG
 
+# 4.5.7 2022-2-6
+
+- Support connect to redis with username.
+- Auto scroll redis terminal.
+- Copy ssh host if using ssh.
+- Fix open es query not active connection #450.
+- Better query file for table.
+
+# 4.5.2 2022-1-21
+
+- Add more error tolerance when connecting.
+- Support show redis server version.
+- Redis string key view support responsive.
+- Fix join result causing the editor to disappear.
+- Support special sftp root path.
+- Remove ftp support.
+- Hide ssh passphrase.
+- SSH terminal add padding.
+- Fix sqlite show name error.
+- Fix sqlite complection fail.
+- Other bugs fix.
+
+# 4.5.0 2022-1-7
+
+- Support connect to clickhouse.
+- Show results in vertical direction.
+- Using new empty row instead of dialog for insert data.
+- Fix join result view and editor fail.
+- Fix complection fail when has as keyword.
+
+# 4.4.0 2021-12-30
+
+- Update extension logo.
+- Do not set the default statement timeout.
+
+# 4.3.6 2021-12-25
+
+- Update connect and result view some style.
+- Redis show key count.
+- Refresh column cache when click table.
+- Import sql support multiple files.
+- Sort mysql database name by alphabet.
+- Change mysql column position add confirm.
+
+# 4.3.5 2021-12-11
+
+- Support delete multi redis key.
+- Fix mysqldump8 dump mysql5.7 server fail.
+- Fix complection fail when hidden procedure group.
+
+# 4.3.1 2021-12-1
+
+- Reduce mysql table info description.
+- Reduce ssh connection description.
+- Fix parse jsonb error #381.
+- Fix redis change page size not work.
+
+# 4.3.0 2021-11-29
+
+- Improve tree view render performance.
+- Update active connection icon.
+- Support show redis database.
+- Better result view design.
+- Fix table columns complection fail.
+- Fix not show call procedure result.
+- Fix using ssh private key open terminal fail.
+- Fix redis cluster load key fail.
+
+# 4.2.3 2021-11-24
+
+- Upgrade ssh2 version, now support more ssh private key format.
+- Support connect postgresql and mysql by connectionUrl.
+- Show postgresql and mysql version on panel.
+- Fix result view not work on remote development.
+- Fix postgresql not reload data when execute DML.
+
+# 4.2.1 2021-11-22
+
+- Using pg_dump to dump postgreSQL.
+- Fix es load index fail.
+- Fix socket path gone #364.
+- Always open new ssh terminal and enhance key event dispath.
+- Supports running in offline environment.
+- Fix filter operation error.
+
+# 4.2.0 2021-11-15
+
+- Remove export file default path.
+
+# 4.1.9 2021-11-11
+
+- Using scan command instead keys for redis.
+- Result and ssh terminal view font style follow vscode setting.
+- Result view add sql preview feature.
+- Better support for singe quote #341.
+
+# 4.1.8 2021-10-29
+
+- Better support for sqlite.
+- Paste as plain text when edit on result view.
+- Change filter operation from = to like.
+- Support change default value for mysql #317.
+- Change default dump url is workspace #293.
+- Add more chinese support on web view.
+
+# 4.1.7 2021-10-8
+
+- Ignore ElasticSearch ssl certificate check.
+- Fix show error column type on result view.
+- Support config ssh connect timeout.
+- Update result view filter color.
+- Ftp node add refresh button.
+
+# 4.1.6 2021-9-18
+
+- Improve security, config.json will auto delete when close.
+- Update some buttion border and icon.
+- Add shortcut to run ElasticSearch query.
+- Fix run postgresql explain sql fail.
+- Fix show duplicate column nodes when have more constraint.
+- Fix generate postgresql mock data fail.
+
+# 4.1.5 2021-9-12
+
+- Add pagination to view redis value with big data.
+- Improve sql complection.
+- Mongodb support sort by column.
+- Change default export path as workspace.
+
+# 4.1.3 2021-9-6
+
+- Reduce ram usage for webview cache.
+
+# 4.1.2 2021-8-29
+
+- Better redis view.
+
+# 4.1.0 2021-8-15
+
+- Support connect to redis cluster, #242.
+- Better result view .
+- Export csv with header, #273.
+- Fix result view loading state gone.
+- Fix codelen check delimiter fail.
+- Fix mysql8 cannot show index.
+
+# 4.0.5 2021-8-13
+
+- Struct sync remove disable connection.
+- Fix auto complete fail on SQL file.
+- Support close ssh connection.
+- Fix result view border not fit for theme.`activeDocument`
+- Fix untitle document cannot split.
+
+# 4.0.0 2021-8-7
+
+- Support multiple result view.
+- Fix result view show vertical scrollbar.
+- Fix conflict with other extension.
+- Fix connect and result view legacy bugs.
+- Remove native ssh from connect view.
+
+# 3.9.9 2021-8-2
+
+- Fix hover query table action not work.
+
 # 3.9.8 2021-7-27
 
 - Support special ssl ca certificate.

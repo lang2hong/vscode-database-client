@@ -6,10 +6,11 @@
 
 :root {
     --editor-color: var(--vscode-menu-foreground);
-    --input-color: var(--vscode-tab-activeForeground);
+    --input-color: var(--vscode-foreground);
     --primary-color: var(--vscode-tab-activeForeground);
-    --second-color: var(--vscode-input-placeholderForeground);
-    --border-color: var(--vscode-button-background);
+    /* --second-color: var(--vscode-input-placeholderForeground); */
+    --second-color: var(--vscode-foreground);
+    --border-color: var(--vscode-quickInputTitle-background);
     --bg-color: var(--vscode-editor-background);
     --disable-bg-color: var(--vscode-editor-background);
     --second-bg-color: var(--vscode-editorSuggestWidget-background);
@@ -42,12 +43,10 @@ body {
   
   /* 滑块样式*/
   ::-webkit-scrollbar-thumb {
-    border-radius: 8px;
     background-color: var(--vscode-scrollbarSlider-background);
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    border-radius: 8px;
     background-color: var(--vscode-scrollbarSlider-hoverBackground);
   }
 
@@ -1426,7 +1425,7 @@ body {
 
 .el-pagination.is-background .btn-next, .el-pagination.is-background .btn-prev, .el-pagination.is-background .el-pager li {
     margin: 0 5px;
-    background-color: #f4f4f5;
+    background-color: var(--bg-color);
     color: var(--input-color);
     min-width: 30px;
     border-radius: 2px
@@ -2774,7 +2773,7 @@ body {
     width: 100%;
     max-width: 100%;
     font-size: 14px;
-    color: var(--primary-color);
+    color: var(--second-color);
 }
 
 .el-table--mini, .el-table--small, .el-table__expand-icon {
@@ -3199,22 +3198,22 @@ body {
 
 .el-table--striped .el-table__body tr.el-table__row--striped td {
     background: var(--vscode-editorSuggestWidget-background) !important;
-    color: var(--primary-color) !important;
+    color: var(--second-color) !important;
 }
 
 .el-table--striped .el-table__body tr.el-table__row--striped.current-row td {
     background: var(--vscode-editorSuggestWidget-background) !important;
-    color: var(--primary-color) !important;
+    color: var(--second-color) !important;
 }
 
 .el-table__body tr.hover-row.current-row > td, .el-table__body tr.hover-row.el-table__row--striped.current-row > td, .el-table__body tr.hover-row.el-table__row--striped > td, .el-table__body tr.hover-row > td {
     background: var(--vscode-tab-hoverBackground) !important;
-    color: var(--primary-color) !important;
+    color: var(--second-color) !important;
 }
 
 .el-table__body tr.current-row > td {
     background: var(--vscode-editorSuggestWidget-background) !important;
-    color: var(--primary-color) !important;
+    color: var(--second-color) !important;
 }
 
 .el-table__column-resize-proxy {

@@ -1,9 +1,22 @@
+import { ColumnMeta } from "@/common/typeDef";
 import { CreateIndexParam } from "./param/createIndexParam";
 import { UpdateColumnParam } from "./param/updateColumnParam";
 import { UpdateTableParam } from "./param/updateTableParam";
 import { SqlDialect } from "./sqlDialect";
 
-export class MongoDialect implements SqlDialect{
+export class MongoDialect implements SqlDialect {
+    showVersion(): string {
+        return 'show version';
+    }
+    showDatabases(): string {
+        return 'show dbs';
+    }
+    buildPageSql(database: string, table: string, pageSize: number): string {
+        return `db('${database}').collection('${table}').find({}).limit(${pageSize}).toArray()`;
+    }
+    pingDataBase(database: string): string {
+        return null;
+    }
     dropIndex(table: string, indexName: string): string {
         throw new Error("Method not implemented.");
     }
@@ -22,16 +35,13 @@ export class MongoDialect implements SqlDialect{
     updateTable(update: UpdateTableParam): string {
         throw new Error("Method not implemented.");
     }
-    updateColumn(table: string, column: string, type: string, comment: string, nullable: string): string {
+    updateColumn(table: string, column: ColumnMeta): string {
         throw new Error("Method not implemented.");
-    }
-    showDatabases(): string {
-        return 'show dbs';
     }
     showTables(database: string): string {
         throw new Error("Method not implemented.");
     }
-    addColumn(table: string): string {
+    addColumn(table: string, column?: string): string {
         throw new Error("Method not implemented.");
     }
     showColumns(database: string, table: string): string {
@@ -58,14 +68,11 @@ export class MongoDialect implements SqlDialect{
     showFunctions(database: string): string {
         throw new Error("Method not implemented.");
     }
-    buildPageSql(database: string, table: string, pageSize: number): string {
-        return `db('${database}').collection('${table}').find({}).limit(${pageSize}).toArray()`;
-    }
     countSql(database: string, table: string): string {
         throw new Error("Method not implemented.");
     }
     createDatabase(database: string): string {
-        throw new Error("Method not implemented.");
+        return `db("db").createCollection("cc")`;
     }
     truncateDatabase(database: string): string {
         throw new Error("Method not implemented.");
@@ -111,9 +118,6 @@ export class MongoDialect implements SqlDialect{
     }
     statusList(): string {
         throw new Error("Method not implemented.");
-    }
-    pingDataBase(database: string): string {
-        return null;
     }
     dropTriggerTemplate(name: string): string {
         throw new Error("Method not implemented.");

@@ -21,31 +21,26 @@ export class SchemaNode extends Node implements CopyAble {
 
 
     public contextValue: string = ModelType.SCHEMA;
-    constructor(public schema: string, readonly parent: Node) {
+    constructor(public schema: string, readonly meta: any, readonly parent: Node) {
         super(schema)
         this.init(this.parent)
         this.cacheSelf()
         this.iconPath = this.getIcon()
-        const lcp = ConnectionManager.activeNode;
-        if (this.isActive(lcp) && (lcp.database == this.database) && (lcp.schema == this.schema)) {
-            this.iconPath=this.getIcon(true)
-            this.description = `Active`
-        }
+        this.bindTooTip();
+        this.checkActive();
     }
 
-    private getIcon(active?: boolean): vscode.ThemeIcon {
+    public getChildren(isRresh: boolean = false): Promise<Node[]> | Node[] {
 
-        const iconId = this.dbType == DatabaseType.MYSQL ? "database" : "symbol-struct"
-        if(Util.supportColorIcon()){
-            return new vscode.ThemeIcon(iconId, new vscode.ThemeColor(active?'charts.blue':'dropdown.foreground'));
+        if (this.dbType == DatabaseType.MONGO_DB) {
+            return [new MongoTableGroup(this)]
+        } else if (this.dbType == DatabaseType.CLICKHOUSE) {
+            return [new TableGroup(this), new ViewGroup(this), new FunctionGroup(this)]
         }
-        return new vscode.ThemeIcon(iconId);
-    }
 
-    public getChildren(): Promise<Node[]> | Node[] {
-
-        if(this.dbType==DatabaseType.MONGO_DB){
-            return [ new MongoTableGroup(this) ]
+        let childCache = this.getChildCache();
+        if (childCache && childCache.length > 0 && !isRresh) {
+            return childCache;
         }
 
         let childs: Node[] = [new TableGroup(this)];
@@ -67,7 +62,29 @@ export class SchemaNode extends Node implements CopyAble {
             childs.push(new TriggerGroup(this))
         }
 
+        this.setChildCache(childs)
         return childs;
+    }
+
+    public checkActive() {
+        const lcp = ConnectionManager.activeNode;
+        const active = this.isActive(lcp) && (lcp.database == this.database) && (lcp.schema == this.schema);
+        this.iconPath = this.getIcon(active);
+    }
+
+    private getIcon(active?: boolean): vscode.ThemeIcon {
+
+        const iconId = (this.dbType == DatabaseType.MYSQL || this.dbType == DatabaseType.CLICKHOUSE) ? "database" : "symbol-struct"
+        if (Util.supportColorIcon()) {
+            return new vscode.ThemeIcon(iconId, new vscode.ThemeColor(active ? 'charts.blue' : 'dropdown.foreground'));
+        }
+        return new vscode.ThemeIcon(iconId);
+    }
+
+    private bindTooTip() {
+        if (this.dbType == DatabaseType.MYSQL && this.meta) {
+            this.tooltip = `Charset: ${this.meta.charset}\nCollation: ${this.meta.collation}`
+        }
     }
 
     public dropDatatabase() {
@@ -79,12 +96,10 @@ export class SchemaNode extends Node implements CopyAble {
                     for (const child of await this.getChildren()) {
                         child.setChildCache(null)
                     }
-                    DatabaseCache.clearDatabaseCache(`${this.getConnectId()}`)
+                    this.parent.clearCache()
                     DbTreeDataProvider.refresh(this.parent);
                     vscode.window.showInformationMessage(`Drop ${target} ${this.schema} success!`)
                 })
-            } else {
-                vscode.window.showInformationMessage(`Cancel drop ${target} ${this.schema}`)
             }
         })
 
@@ -110,7 +125,7 @@ export class SchemaNode extends Node implements CopyAble {
 
     public async newQuery() {
 
-        QueryUnit.showSQLTextDocument(this,'',`${this.schema}.sql`,FileModel.APPEND)
+        QueryUnit.showSQLTextDocument(this, '', `${this.schema}.sql`)
 
     }
 

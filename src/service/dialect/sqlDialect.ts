@@ -1,3 +1,4 @@
+import { ColumnMeta } from "@/common/typeDef";
 import { CreateIndexParam } from "./param/createIndexParam";
 import { UpdateColumnParam } from "./param/updateColumnParam";
 import { UpdateTableParam } from "./param/updateTableParam";
@@ -9,13 +10,14 @@ export abstract class SqlDialect {
     updateColumnSql(updateColumnParam: UpdateColumnParam): string {
         throw new Error("Method not implemented.");
     }
+    showVersion(): string { return null; }
     showIndex(database: string, table: string): string { return null; }
     createIndex(createIndexParam: CreateIndexParam): string { return null };
     showDatabases(): string { return null; }
-    abstract updateColumn(table: string, column: string, type: string, comment: string, nullable: string): string;
+    abstract updateColumn(table: string, column: ColumnMeta): string;
     abstract showSchemas(): string;
     abstract showTables(database: string): string;
-    abstract addColumn(table: string): string;
+    abstract addColumn(table: string,column?:string): string;
     abstract showColumns(database: string, table: string): string;
     abstract showViews(database: string): string;
     abstract showUsers(): string;

@@ -11,6 +11,10 @@ export class TableChain implements ComplectionChain {
 
     public async getComplection(context: ComplectionContext): Promise<vscode.CompletionItem[]> {
         
+        if(ConnectionManager.tryGetConnection()==null){
+            return null;
+        }
+
         const current=context.currentToken?.content
         if (current == ".") {
             const previous = context.previousToken?.content;
@@ -57,7 +61,7 @@ export class TableChain implements ComplectionChain {
 
         // If has input, try find schema of current catalog.
         if (inputWord) {
-            const connectcionid = lcp?.getConnectId({ schema: inputWord, withSchema: true });
+            const connectcionid = lcp?.getUid({ schema: inputWord, withSchema: true });
             lcp = Node.nodeCache[connectcionid]
             if (!lcp) return []
         }

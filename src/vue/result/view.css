@@ -19,10 +19,10 @@ overflow: unset;
 
 .sql-pannel{
   width:100%;
-  font-size: 14px;
+  /* font-size: 14px; */
 }
 .sql-pannel textarea{
-  font-family: "Segoe UI"; 
+  font-family: inherit; 
   padding-top: 0;
   padding-left: 10px;
 }
@@ -40,6 +40,13 @@ overflow: unset;
   margin-left: 6px;
 }
 
+.el-popover{
+  border: none;
+  width: unset !important;
+  max-width: 300px;
+}
+
 .el-popover__reference{
-  background-color: #409EFF;
+  color: var(--input-color);
+  background-color: unset;
 }

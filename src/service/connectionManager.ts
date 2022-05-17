@@ -6,12 +6,13 @@ import { QueryUnit } from "./queryUnit";
 import { SSHConfig } from "../model/interface/sshConfig";
 import { DatabaseCache } from "./common/databaseCache";
 import { NodeUtil } from "../model/nodeUtil";
-import { SSHTunnelService } from "./tunnel/sshTunnelService";
+import { SSHTunnelService } from "./ssh/tunnel/sshTunnelService";
 import { DbTreeDataProvider } from "../provider/treeDataProvider";
 import { IConnection } from "./connect/connection";
 import { DatabaseType } from "@/common/constants";
 import { EsConnection } from "./connect/esConnection";
 import { MSSqlConnnection } from "./connect/mssqlConnection";
+import { ClickHouseConnection } from "./connect/clickHouseConnection";
 import { MysqlConnection } from "./connect/mysqlConnection";
 import { PostgreSqlConnection } from "./connect/postgreSqlConnection";
 import { RedisConnection } from "./connect/redisConnection";
@@ -19,6 +20,7 @@ import { FTPConnection } from "./connect/ftpConnection";
 import { SqliteConnection } from "./connect/sqliteConnection";
 import { Console } from "@/common/Console";
 import { MongoConnection } from "./connect/mongoConnection";
+import { UnsupportConnection } from "./connect/unsupportConnection";
 
 interface ConnectionWrapper {
     connection: IConnection;
@@ -104,17 +106,14 @@ export class ConnectionManager {
             const ssh = connectionNode.ssh;
             let connectOption = connectionNode;
             if (connectOption.usingSSH) {
-                connectOption = await this.tunnelService.createTunnel(connectOption, (err) => {
-                    reject(err?.message || err?.errno);
-                    if (err.errno == 'EADDRINUSE') { return; }
+                try {
+                    connectOption = await this.tunnelService.createTunnel(connectOption)
+                } catch (error) {
                     this.alivedConnection[key] = null
-                })
-                if (!connectOption) {
-                    reject("create ssh tunnel fail!");
-                    return;
+                    reject(error);
                 }
             }
-            const newConnection = this.create(connectOption);
+            const newConnection = this.createConnection(connectOption);
             this.alivedConnection[key] = { connection: newConnection, ssh };
             newConnection.connect(async (err: Error) => {
                 if (err) {
@@ -138,25 +137,31 @@ export class ConnectionManager {
 
     }
 
-    private static create(opt: Node) {
-        if (!opt.dbType) opt.dbType = DatabaseType.MYSQL
-        switch (opt.dbType) {
+    private static createConnection(node: Node) {
+        switch (node.dbType) {
+            case DatabaseType.MYSQL:
+                return new MysqlConnection(node)
             case DatabaseType.MSSQL:
-                return new MSSqlConnnection(opt)
+                return new MSSqlConnnection(node)
             case DatabaseType.PG:
-                return new PostgreSqlConnection(opt)
+                return new PostgreSqlConnection(node)
             case DatabaseType.SQLITE:
-                return new SqliteConnection(opt);
+                return new SqliteConnection(node);
             case DatabaseType.ES:
-                return new EsConnection(opt);
+                return new EsConnection(node);
             case DatabaseType.MONGO_DB:
-                return new MongoConnection(opt);
+                return new MongoConnection(node);
             case DatabaseType.REDIS:
-                return new RedisConnection(opt);
+                return new RedisConnection(node);
             case DatabaseType.FTP:
-                return new FTPConnection(opt);
+                return new FTPConnection(node);
+            case DatabaseType.CLICKHOUSE:
+                return new ClickHouseConnection(node);
         }
-        return new MysqlConnection(opt)
+        if (node.dbType) {
+            return new UnsupportConnection(node)
+        }
+        return new MysqlConnection(node)
     }
 
     private static end(key: string, connection: ConnectionWrapper) {
@@ -178,9 +183,7 @@ export class ConnectionManager {
                     .replace(/#.+$/, '').split('@')
                 if (host != null) {
                     const node = NodeUtil.of({ key: queryName.split('@@')[0], host, port: parseInt(port), database, schema });
-                    if (node.getCache()) {
-                        return node.getCache();
-                    }
+                    return node.getCache();
                 }
             }
         }

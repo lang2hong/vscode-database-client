@@ -23,7 +23,7 @@ export class MSSqlConnnection extends ConnectionPool<Connection>{
                 trustServerCertificate: true,
                 database: node.database || undefined,
                 connectTimeout: node.connectTimeout ? parseInt(node.connectTimeout as any) : 5000,
-                requestTimeout: node.requestTimeout ? parseInt(node.requestTimeout as any) : 10000,
+                requestTimeout: node.requestTimeout ? parseInt(node.requestTimeout as any) : 30000,
                 encrypt: node.encrypt
             },
             authentication: {
@@ -90,7 +90,7 @@ export class MSSqlConnnection extends ConnectionPool<Connection>{
                         temp[column.metadata.colName] = format("yyyy-MM-dd hh:mm:ss", column.value)
                     }
                     if (this.dumpMode) {
-                        temp[column.metadata.colName] = `'${temp[column.metadata.colName]}'`
+                        temp[column.metadata.colName] = temp[column.metadata.colName]!=null?`'${temp[column.metadata.colName]}'`:"null"
                     }
                 });
                 if (!callback) {

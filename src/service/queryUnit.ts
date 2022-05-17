@@ -38,7 +38,7 @@ export class QueryUnit {
     public static async runQuery(sql: string, connectionNode: Node, queryOption: QueryOption = {}): Promise<void> {
 
         if (!connectionNode) {
-            vscode.window.showErrorMessage("Not active database connection found!")
+            vscode.window.showErrorMessage("No active database connection found!")
             return;
         }
 
@@ -52,7 +52,7 @@ export class QueryUnit {
             queryOption.recordHistory = true;
         }
         if (!sql) {
-            vscode.window.showErrorMessage("Not sql found!")
+            vscode.window.showErrorMessage("No SQL found!")
             return;
         }
 
@@ -61,7 +61,7 @@ export class QueryUnit {
         const parseResult = DelimiterHolder.parseBatch(sql, connectionNode.getConnectId())
         sql = parseResult.sql
         if (!sql && parseResult.replace) {
-            QueryPage.send({ connection: connectionNode, type: MessageType.MESSAGE, queryOption, res: { message: `change delimiter success`, success: true } as MessageResponse });
+            QueryPage.send({ connection: connectionNode, type: MessageType.MESSAGE, queryOption, res: { message: `Change delimiter success`, success: true } as MessageResponse });
             return;
         }
 
@@ -80,11 +80,11 @@ export class QueryUnit {
                     vscode.commands.executeCommand(CodeCommand.RecordHistory, sql, costTime);
                 }
 
-                if (sql.match(/(create|drop|alter)\s+(table|prcedure|FUNCTION|VIEW)/i)) {
-                    vscode.commands.executeCommand(CodeCommand.Refresh);
+                if (sql.match(/(create|drop|alter)\s+(database|table|procedure|FUNCTION|VIEW)/i)) {
+                    vscode.commands.executeCommand(CodeCommand.Refresh,connectionNode,true);
                 }
 
-                if (data.affectedRows) {
+                if (data?.affectedRows) {
                     QueryPage.send({ connection: connectionNode, type: MessageType.DML, queryOption, res: { sql, costTime, affectedRows: data.affectedRows } as DMLResponse });
                     return;
                 }
@@ -98,14 +98,10 @@ export class QueryUnit {
                         QueryPage.send({ connection: connectionNode, type: MessageType.DATA, queryOption, res: { sql, costTime, data, fields, total } as DataResponse });
                         return;
                     }
-                }
-
-                if (Array.isArray(data)) {
-                    // mysql procedrue call result
-                    const lastEle = data[data.length - 1]
-                    if (data.length > 2 && Util.is(lastEle, 'ResultSetHeader') && Util.is(data[0], 'TextRow')) {
-                        data = data[data.length - 2]
-                        fields = fields[fields.length - 2] as any as FieldInfo[]
+                    // is multiple query result.
+                    if(Util.is(fields[0], 'Array')){
+                        data=data[0]
+                        fields = fields[0] as any as FieldInfo[]
                         QueryPage.send({ connection: connectionNode, type: MessageType.DATA, queryOption, res: { sql, costTime, data, fields, total } as DataResponse });
                         return;
                     }
@@ -156,10 +152,9 @@ export class QueryUnit {
         return SQLParser.parseBlockSingle(editor.document, editor.selection.active)?.sql
     }
 
-    public static async showSQLTextDocument(node: Node, sql: string, template = "template.sql", fileMode: FileModel = FileModel.WRITE): Promise<vscode.TextEditor> {
+    public static async showSQLTextDocument(node: Node, sql: string, template = "template.sql", fileMode?: FileModel): Promise<vscode.TextEditor> {
 
-        const document = await vscode.workspace.openTextDocument(await FileManager.record(`${node.uid}/${template}`, sql, fileMode));
-        return await vscode.window.showTextDocument(document);
+        return FileManager.showSQLTextDocument(node,sql,template,fileMode)
     }
 
 }

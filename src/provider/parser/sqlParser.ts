@@ -1,8 +1,9 @@
+import { DatabaseType } from '@/common/constants';
 import { DelimiterHolder } from '@/service/common/delimiterHolder';
 import { ConnectionManager } from '@/service/connectionManager';
 import * as vscode from 'vscode';
-import { SQLBlock, SQLToken } from './sqlBlcok';
-import { TokenContext } from './tokenContext';
+import { SQLBlock } from './sqlBlcok';
+import { SQLContext } from './sqlContext';
 
 export class SQLParser {
 
@@ -13,17 +14,23 @@ export class SQLParser {
     public static parseBlocks(document: vscode.TextDocument, current?: vscode.Position): SQLBlock[] {
 
 
+        const dbType=this.getDbType()
         const delimter = this.getDelimter();
 
-        const blocks: SQLBlock[] = []
-        let lastLineLength: number;
-        const context = { inSingleQuoteString: false, inDoubleQuoteString: false, inComment: false, sql: '', start: null }
-        let tokenContext = new TokenContext()
+        const context = new SQLContext();
 
         const lineCount = Math.min(document.lineCount, 5000);
         for (var i = 0; i < lineCount; i++) {
             var text = document.lineAt(i).text
-            lastLineLength = text.length;
+
+            // check change DELIMITER 
+            if (text.match(/^DELIMITER/i)) {
+                let block = context.endContext(i, 0)
+                block = context.append(i, 0, text).endContext(i, text.length)
+                if (this.hitCursor(block, current)) return [block]
+                continue;
+            }
+
             for (let j = 0; j < text.length; j++) {
                 const ch = text.charAt(j);
                 // comment check
@@ -33,14 +40,7 @@ export class SQLParser {
                     continue;
                 }
                 if (context.inComment) continue;
-                // string check
-                if (ch == `'`) {
-                    context.inSingleQuoteString = !context.inSingleQuoteString;
-                } else if (ch == `"`) {
-                    context.inDoubleQuoteString = !context.inDoubleQuoteString;
-                }
-                const inString = context.inSingleQuoteString || context.inDoubleQuoteString;
-                if (!inString) {
+                if (!context.isString(ch)) {
                     // line comment
                     if (ch == '-' && text.charAt(j + 1) == '-') break;
                     // block comment start
@@ -50,48 +50,43 @@ export class SQLParser {
                         continue;
                     }
                     // check sql end 
-                    if (ch == delimter) {
-                        if (!context.start) continue;
-                        tokenContext.endToken(i, j)
-                        const range = new vscode.Range(context.start, new vscode.Position(i, j + 1));
-                        const block: SQLBlock = { sql: context.sql, range, tokens: tokenContext.tokens, scopes: tokenContext.scopes };
-                        if (current && (range.contains(current) || range.start.line > current.line)) {
-                            return [block];
-                        }
-                        blocks.push(block);
-                        context.sql = ''
-                        context.start = null
-                        tokenContext = new TokenContext()
+                    const notInDDL=!context.inDDL || dbType!=DatabaseType.MYSQL;
+                    if (ch == delimter && notInDDL) {
+                        const block = context.endContext(i, j)
+                        if (this.hitCursor(block, current)) return [block];
                         continue;
                     }
                 }
 
-                tokenContext.appendChar(i, j, ch)
-
-                if (!context.start) {
-                    if (ch.match(/\s/)) continue;
-                    context.start = new vscode.Position(i, j)
-                }
-                context.sql = context.sql + ch;
+                context.append(i, j, ch)
             }
+
             if (context.sql) {
-                context.sql = context.sql + '\n';
-                tokenContext.appendChar(i, text.length, '\n')
+                context.append(i, text.length, '\n')
             }
 
         }
 
-        // if end withtout delimter
-        if (context.start) {
-            const range = new vscode.Range(context.start, new vscode.Position(lineCount, lastLineLength));
-            const block: SQLBlock = { sql: context.sql, range, tokens: tokenContext.tokens, scopes: tokenContext.scopes };
-            if (current) return [block];
-            blocks.push(block)
+        // check end withtout delimter
+        const block = context.endContext(lineCount, document.lineAt(lineCount-1).text.length)
+        if (block && current) {
+            return [block]
         }
 
-        return blocks
+        return context.getBlocks();
 
     }
+
+    private static getDbType(){
+        return ConnectionManager.tryGetConnection()?.dbType;
+    }
+
+    private static hitCursor(block: SQLBlock, current?: vscode.Position) {
+        if (block == null || current == null) return false;
+        const range = block.range;
+        return range.contains(current) || range.start.line > current.line;
+    }
+
     private static getDelimter() {
 
         const node = ConnectionManager.tryGetConnection()

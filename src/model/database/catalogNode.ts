@@ -19,13 +19,17 @@ export class CatalogNode extends Node implements CopyAble {
         super(database)
         this.init(this.parent)
         this.cacheSelf()
+        this.checkActive();
+    }
+
+    public checkActive() {
         const lcp = ConnectionManager.activeNode;
         if (this.isActive(lcp) && (lcp.database == this.database)) {
             if (Util.supportColorIcon()) {
-                this.iconPath=new vscode.ThemeIcon("database", new vscode.ThemeColor('charts.blue'));
-            }else{
-                this.description = `Active`
-            }
+                this.iconPath = new vscode.ThemeIcon("database", new vscode.ThemeColor('charts.blue'));
+            } 
+        }else{
+            this.iconPath = new vscode.ThemeIcon("database");
         }
     }
 
@@ -38,7 +42,7 @@ export class CatalogNode extends Node implements CopyAble {
 
     public async newQuery() {
 
-        QueryUnit.showSQLTextDocument(this,'',`${this.database}.sql`,FileModel.APPEND)
+        QueryUnit.showSQLTextDocument(this,'',`${this.database}.sql`)
 
     }
 
@@ -47,7 +51,7 @@ export class CatalogNode extends Node implements CopyAble {
         vscode.window.showInputBox({ prompt: `Are you want to drop database ${this.schema} ?     `, placeHolder: 'Input database name to confirm.' }).then(async (inputContent) => {
             if (inputContent && inputContent.toLowerCase() == this.database.toLowerCase()) {
                 this.execute(`DROP DATABASE ${this.wrap(this.database)}`).then(() => {
-                    DatabaseCache.clearDatabaseCache(`${this.getConnectId()}`)
+                    this.parent.clearCache()
                     DbTreeDataProvider.refresh(this.parent);
                     vscode.window.showInformationMessage(`Drop database ${this.schema} success!`)
                 })

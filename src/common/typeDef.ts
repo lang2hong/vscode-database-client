@@ -100,9 +100,12 @@ export interface ColumnMeta {
 export interface TableMeta{
     name:string;
     comment:string;
-    rows:string;
     /**
-     * below mysql only
+     * mysql only
+     */
+    table_rows:string;
+    /**
+     * mysql only
      */
     auto_increment?:string;
     row_format?:string;
@@ -114,4 +117,18 @@ export interface TableMeta{
      * clustered bytes * pagesize
      */
     index_length?:string;
+}
+
+export interface ViewMeta extends TableMeta{
+    /**
+     * pg only, material: material view
+     */
+    type?:string;
+}
+
+export interface RedisDBMeta {
+    name: string;
+    keys?: string;
+    expires?: string;
+    avg_ttl?: string;
 }

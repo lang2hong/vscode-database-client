@@ -2,10 +2,10 @@
   <div id="app">
     <el-container direction="vertical" class="key-tab-container">
       <!-- key info -->
-      <el-form :inline="true">
+      <el-form :inline="true" ref="infoForm">
         <!-- key name -->
         <el-form-item>
-          <el-input ref="keyNameInput" v-model="edit.name" @keyup.enter.native="rename" placeholder="set to rename key">
+          <el-input ref="keyNameInput" v-model="edit.name" @keyup.enter.native="rename" placeholder="set to rename key" size="medium">
             <span slot="prepend" class="key-detail-type">{{ key.type }}</span>
             <i class="el-icon-check el-input__icon cursor-pointer" slot="suffix" :title="'Click to rename'" @click="rename">
             </i>
@@ -14,7 +14,7 @@
 
         <!-- key ttl -->
         <el-form-item>
-          <el-input v-model="edit.ttl" @keyup.enter.native="ttlKey" type='number'>
+          <el-input v-model="edit.ttl" @keyup.enter.native="ttlKey" type='number' size="medium">
             <span slot="prepend">TTL</span>
             <i class="el-icon-check el-input__icon cursor-pointer" slot="suffix" :title="'Click to change ttl'" @click="ttlKey">
             </i>
@@ -23,18 +23,16 @@
 
         <!-- del refresh key btn -->
         <el-form-item>
-          <el-button type="danger" @click="deleteKey" icon="el-icon-delete"></el-button>
-          <el-button type="success" @click="refresh" icon="el-icon-refresh"></el-button>
+          <el-button type="danger" @click="deleteKey" icon="el-icon-delete" size="small"></el-button>
+          <el-button type="success" @click="refresh" icon="el-icon-refresh" size="small"></el-button>
           <template v-if="key.type=='string'">
-            <el-select v-model="selectedView" class='format-selector' :style='selectStyle' size='mini'>
+            <el-select v-model="selectedView" class='format-selector' :style='selectStyle' size="small">
               <span slot="prefix" class="fa fa-sitemap"></span>
               <el-option v-for="item in viewers" :key="item.value" :label="item.text" :value="item.value">
               </el-option>
             </el-select>
             <!-- save btn -->
-            <el-form-item>
-              <el-button type="primary" @click="update()">Save</el-button>
-            </el-form-item>
+            <el-button type="primary" @click="update()" size="small">Save</el-button>
           </template>
         </el-form-item>
       </el-form>
@@ -43,16 +41,15 @@
       <el-form class='key-content-string' v-if="key.type=='string'">
         <!-- key content textarea -->
         <el-form-item>
-
           <span v-if='binary' class='formater-binary'>Hex</span>
-          <div class="value-panel" :style="'height:'+ dynamicHeight">
+          <div class="value-panel">
             <!-- 字符串 -->
             <div v-if="selectedView=='ViewerText'">
-              <el-input type='textarea' :autosize="{ minRows:6}" v-model='edit.content'></el-input>
+              <el-input type='textarea' :autosize="{ minRows:6}" v-model='edit.content' :style="'height:'+ remainHeight+'px'"></el-input>
             </div>
             <!-- Json -->
             <div v-if="selectedView=='ViewerJson'">
-              <pre v-html="editTemp" contenteditable="true" class="json-panel" @input="changeByJson"></pre>
+              <pre v-html="editTemp" contenteditable="true" class="json-panel" @input="changeByJson" :style="'height:'+ remainHeight+'px'"></pre>
             </div>
           </div>
         </el-form-item>
@@ -61,15 +58,14 @@
       <div v-if="key.type=='list' || key.type=='set' || key.type=='zset' || key.type=='hash' ">
         <div>
           <!-- add button -->
-          <el-form :inline="true" size="small">
-            <el-form-item>
-              <el-button size="small" type="primary" @click='editDialogVisiable=true'>
-                Add New
-              </el-button>
-            </el-form-item>
-          </el-form>
+          <el-button size="small" type="primary" @click='editDialogVisiable=true'>
+            Add New
+          </el-button>
+          <el-input v-model="searchInput" size="mini" placeholder="Input To Search Data" style="width:200px" :clearable="true" />
+          <el-pagination style="display:inline-block" class="pagenation-table-page-container" :total="dataCount" :page-size.sync="pageSize" :current-page.sync="pageIndex" :page-sizes="[20,50,100, 200, 300]" layout="total, sizes, prev, pager, next, jumper" background>
+          </el-pagination>
           <!-- edit & add dialog -->
-          <el-dialog :title="dialogTitle" :visible.sync="editDialogVisiable">
+          <el-dialog :title="dialogTitle" :visible.sync="editDialogVisiable" :closeOnClickModal="false">
             <el-form>
               <el-form-item label="key" v-if="key.type=='hash'">
                 <el-input v-model="addKey"></el-input>
@@ -86,32 +82,35 @@
         </div>
         <!-- content table -->
         <div>
-          <el-table :data="key.content" stripe size="small" border>
+          <el-table :data="dataAfterFilter" :height="remainHeight" stripe size="mini" border :header-cell-style="{padding: 0}">
             <el-table-column type="index" label="ID" sortable width="60" align="center">
             </el-table-column>
-            <el-table-column v-if="key.type=='hash'" resizable sortable label="Key" align="center">
+            <el-table-column v-if="key.type=='hash'" sort-by="key" resizable sortable label="Key" align="center">
               <template slot-scope="scope">
                 {{scope.row.key}}
               </template>
             </el-table-column>
-            <el-table-column resizable sortable show-overflow-tooltip label="Value" align="center">
+            <el-table-column v-if="key.type=='zset'" sort-by="score" resizable sortable label="Score" align="center" width="100">
               <template slot-scope="scope">
-                {{key.type=='hash'?scope.row.value:scope.row}}
+                {{scope.row.score}}
+              </template>
+            </el-table-column>
+            <el-table-column sort-by="value" resizable sortable show-overflow-tooltip label="Value" align="center">
+              <template slot-scope="scope">
+                <span v-if="key.type=='hash'" v-text="scope.row.value"></span>
+                <span v-else-if="key.type=='zset'" v-text="scope.row.value"></span>
+                <span v-else v-text="scope.row"></span>
               </template>
             </el-table-column>
             <el-table-column label="Operation" width="150" align="center">
               <template slot-scope="scope">
-                <el-button type="text" @click="showEditDialog(scope.row)" icon="el-icon-edit" circle  v-if="key.type=='hash'">
-                </el-button>
-                <el-button type="text" @click="deleteLine(scope.row)" icon="el-icon-delete" circle>
-                </el-button>
+                <el-link type="primary" @click="showEditDialog(scope.row)" icon="el-icon-edit" :underline="false" circle v-if="key.type=='hash'">
+                </el-link>
+                <el-link type="primary" @click="deleteLine(scope.row)" icon="el-icon-delete" :underline="false" circle>
+                </el-link>
               </template>
             </el-table-column>
           </el-table>
-          <!-- <el-pagination class="pagenation-table-page-container" v-if="dataAfterFilter.length > pageSize"
-                        :total="dataAfterFilter.length" :page-size="pageSize" :current-page.sync="pageIndex"
-                        layout="total, prev, pager, next" background>
-                    </el-pagination> -->
         </div>
       </div>
       <!-- hset -->
@@ -130,36 +129,16 @@ export default {
   destroyed() {
     vscodeEvent.destroy();
   },
-  mounted() {
-    vscodeEvent = getVscodeEvent();
-    vscodeEvent
-      .on("detail", (data) => {
-        this.key = data.res;
-        this.edit = this.deepClone(data.res);
-        this.editTemp = this.jsonContent();
-        const temp = this.edit.content + "".trim();
-        this.selectedView =
-          temp.startsWith("[") || temp.startsWith("{")
-            ? "ViewerJson"
-            : "ViewerText";
-      })
-      .on("msg", (content) => {
-        this.$message.success(content);
-      })
-      .on("refresh", () => {
-        this.editDialogVisiable = false;
-        this.editModel=false;
-        this.addData = null;
-        this.addKey = null;
-        this.refresh();
-      });
-    vscodeEvent.emit("route-" + this.$route.name);
-  },
   data() {
     return {
       addKey: "",
       addData: "",
+      searchInput: "",
       editModel: false,
+      pageIndex: 1,
+      pageSize: 100,
+      dataCount:0,
+      remainHeight:0,
       key: { name: "", ttl: -1, content: null },
       // copy from key
       edit: { name: "", ttl: -1, content: null },
@@ -175,7 +154,49 @@ export default {
       textrows: 6,
     };
   },
+  mounted() {
+    const infoForm=this.$refs.infoForm.$el;
+    const updateHeight=()=>{
+      this.remainHeight = window.innerHeight -35 - infoForm.clientHeight ;
+    }
+    updateHeight()
+    new ResizeObserver(updateHeight).observe(document.body)
+    window.addEventListener("resize", updateHeight);
+    vscodeEvent = getVscodeEvent();
+    vscodeEvent
+      .on("detail", (data) => {
+        this.pageIndex = 1;
+        this.pageSize = 100;
+        this.key = data.res;
+        this.edit = this.deepClone(data.res);
+        if (this.key.type == "string") {
+          const isJSON = this.edit.content.match(/^\s*[{[]/);
+          this.selectedView = isJSON ? "ViewerJson" : "ViewerText";
+          this.editTemp = isJSON ? this.jsonContent() : this.edit.content;
+        }
+      })
+      .on("msg", (content) => {
+        this.$message.success(content);
+      })
+      .on("refresh", () => {
+        this.editDialogVisiable = false;
+        this.editModel = false;
+        this.addData = null;
+        this.addKey = null;
+        this.refresh();
+      });
+    vscodeEvent.emit("route-" + this.$route.name);
+  },
   computed: {
+    dataAfterFilter() {
+      const str=this.searchInput;
+      const filterData=this.key.content.filter(data=>!str || (data.value ? data.value.includes(str):data.includes(str)));
+      this.dataCount=filterData.length;
+      return filterData.slice(
+        (this.pageIndex - 1) * this.pageSize,
+        this.pageIndex * this.pageSize
+      );
+    },
     dialogTitle() {
       const edit = this.editModel;
       switch (this.key.type) {
@@ -200,14 +221,36 @@ export default {
     },
     jsonContent() {
       try {
-        return formatHighlight(JSON.parse(this.edit.content), {
-          keyColor: "#C792EA",
-          numberColor: "#CE9178",
-          stringColor: "#92D69E",
-          trueColor: "#569cD6",
-          falseColor: "#569cD6",
-          nullColor: "#569cD6",
-        });
+        let colorOptions = {
+          keyColor: "#0451a5",
+          numberColor: "#098658",
+          stringColor: "#a31515",
+          trueColor: "#0000ff",
+          falseColor: "#0000ff",
+          nullColor: "#0000ff",
+        };
+        const darkTheme = {
+          keyColor: "#9cdcfe",
+          numberColor: "#9cdcfe",
+          stringColor: "#ce9178",
+          trueColor: "#569cd6",
+          falseColor: "#569cd6",
+          nullColor: "#569cd6",
+        };
+        if (document.body.dataset.vscodeThemeKind == "vscode-dark") {
+          colorOptions =
+            document.body.dataset.vscodeThemeName == "Dark (Visual Studio)"
+              ? darkTheme
+              : {
+                  keyColor: "var(--vscode-terminal-ansiMagenta)",
+                  trueColor: "var(--vscode-terminal-ansiBlue)",
+                  falseColor: "var(--vscode-terminal-ansiBlue)",
+                  nullColor: "var(--vscode-terminal-ansiBlue)",
+                  stringColor: "var(--vscode-terminal-ansiGreen)",
+                  numberColor: "var(--vscode-terminal-ansiYellow)",
+                };
+        }
+        return formatHighlight(JSON.parse(this.edit.content), colorOptions);
       } catch (error) {
         console.log(error);
         return this.edit.content;
@@ -224,10 +267,10 @@ export default {
       });
     },
     showEditDialog(row) {
-      this.addKey=row.key
-      this.addData=row.value
-      this.editModel=true;
-      this.editDialogVisiable=true
+      this.addKey = row.key;
+      this.addData = row.value;
+      this.editModel = true;
+      this.editDialogVisiable = true;
     },
     deleteLine(row) {
       vscodeEvent.emit("deleteLine", row);
@@ -258,6 +301,7 @@ export default {
       vscodeEvent.emit("update", {
         key: {
           name: this.key.name,
+          newName:this.edit.name,
           type: this.key.type,
           content: this.edit.content,
         },
@@ -283,17 +327,19 @@ export default {
 </script>
 <style scoped>
 .json-panel {
+  overflow: scroll;
   line-height: 1.3;
-  background: #292a2b;
-  font-size: 20px;
-  font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, Courier,
-    monospace, "Avenir", Helvetica, Arial, sans-serif;
+  font-family: var(--vscode-editor-font-family);
+  font-weight: var(--vscode-editor-font-weight);
+  font-size: var(--vscode-editor-font-size);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px;
+  outline: none;
 }
 
-body {
-  background-color: #ffffff;
-  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", Arial, sans-serif;
+.json-panel:focus {
+  border-color: var(--umy-focus-color);
 }
 
 .value-panel {
@@ -305,8 +351,8 @@ body {
   padding-left: 5px;
 }
 
-.el-form-item{
-margin: 3px;
+.el-form-item {
+  margin: 3px;
 }
 
 .key-header-info {
@@ -344,8 +390,8 @@ margin: 3px;
 
 /* viewer */
 .format-selector {
-  margin-left: 20px;
-  margin-right: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
   width: 122px;
 }
 
@@ -388,5 +434,9 @@ margin: 3px;
   padding-left: 5px;
   color: #7ab3ef;
   font-size: 80%;
+}
+
+.el-form-item__content .el-input-group {
+  vertical-align: baseline;
 }
 </style>
