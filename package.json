@@ -2,7 +2,7 @@
 	"name": "DBCC",
 	"displayName": "DBCC",
 	"description": "DataBase Client Clone",
-	"version": "3.9.10",
+	"version": "3.9.11",
 	"publisher": "ErnestDong",
 	"icon": "resources/logo.png",
 	"engines": {
@@ -1086,6 +1086,7 @@
 		"vue-style-loader": "^4.1.2",
 		"vue-template-compiler": "^2.6.11",
 		"webpack": "^4.43.0",
+		"vsce": "^2.11.0",
 		"webpack-cli": "^3.3.11"
 	},
 	"dependencies": {
@@ -1093,7 +1094,7 @@
 		"aws4": "^1.11.0",
 		"axios": "^0.21.1",
 		"command-exists": "^1.2.9",
-		"comment-json": "^4.1.0",
+		"comment-json": "4.1.0",
 		"compare-versions": "^3.6.0",
 		"date-format": "^3.0.0",
 		"debug": "^4.3.2",
