@@ -1,21 +1,21 @@
+import { Trans } from "@/common/trans";
 import { FieldInfo } from "@/common/typeDef";
 import { Util } from "@/common/util";
 import { EsRequest } from "@/model/es/esRequest";
 import { ServiceManager } from "@/service/serviceManager";
+import { userInfo } from "os";
 import { basename, extname } from "path";
-import { commands, env, Uri, ViewColumn, WebviewPanel, window, workspace } from "vscode";
-import { Trans } from "@/common/trans";
-import { blackList, ConfigKey, Constants, DatabaseType, MessageType } from "../../common/constants";
+import { Uri, WebviewPanel, commands, env, window, workspace } from "vscode";
+import { localize } from "vscode-nls-i18n";
+import { ConfigKey, DatabaseType, MessageType, blackList } from "../../common/constants";
 import { Global } from "../../common/global";
 import { ViewManager } from "../../common/viewManager";
 import { Node } from "../../model/interface/node";
 import { ColumnNode } from "../../model/other/columnNode";
 import { ExportService } from "../export/exportService";
 import { QueryOption, QueryUnit } from "../queryUnit";
-import { DataResponse, ErrorResponse } from "./queryResponse";
 import { ResourceServer } from "../resourceServer";
-import { localize } from "vscode-nls-i18n";
-import { userInfo } from "os";
+import { DataResponse, ErrorResponse } from "./queryResponse";
 
 export class QueryParam<T> {
     public connection: Node;
@@ -117,9 +117,9 @@ export class QueryPage {
                 }).on('changePageSize', (pageSize) => {
                     Global.updateConfig(ConfigKey.DEFAULT_LIMIT, pageSize)
                 }).on('openGithub', () => {
-                    env.openExternal(Uri.parse('https://github.com/cweijan/vscode-database-client'));
+                    env.openExternal(Uri.parse('https://github.com/lang2hong/vscode-database-client'));
                 }).on('openCoffee', () => {
-                    env.openExternal(Uri.parse('https://www.buymeacoffee.com/cweijan'));
+                    env.openExternal(Uri.parse('https://www.buymeacoffee.com/lang2hong'));
                 }).on('dataModify', () => {
                     if (handler.panel.title.indexOf("*") == -1) handler.panel.title = `${handler.panel.title}*`
                 }).on("saveModify", (sql) => {

@@ -35,7 +35,7 @@ export default {
 
 <style scoped>
 .el-icon-time {
-  line-height: 35px;
+  line-height: 40px;
 }
 
 .el-date-editor {

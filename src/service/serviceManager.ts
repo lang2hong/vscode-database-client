@@ -1,49 +1,49 @@
 import { CacheKey, DatabaseType } from "@/common/constants";
+import ConnectionProvider from "@/model/ssh/connectionProvider";
+import { HighlightCreator } from "@/provider/codelen/highlightCreator";
 import { SqlCodeLensProvider } from "@/provider/codelen/sqlCodeLensProvider";
+import { SQLSymbolProvide } from "@/provider/sqlSymbolProvide";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 import { FileManager } from "../common/filesManager";
 import { Global } from "../common/global";
+import { ViewManager } from "../common/viewManager";
 import { CompletionProvider } from "../provider/complete/completionProvider";
 import { SqlFormattingProvider } from "../provider/sqlFormattingProvider";
 import { TableInfoHoverProvider } from "../provider/tableInfoHoverProvider";
-import { DbTreeDataProvider as DbTreeDataProvider } from "../provider/treeDataProvider";
-import { ConnectService } from "./connect/connectService";
-import { MysqlStatusService } from "./status/mysqlStatusService";
-import { StatusService } from "./status/statusService";
-import { ViewManager } from "../common/viewManager";
+import { DbTreeDataProvider } from "../provider/treeDataProvider";
 import { DatabaseCache } from "./common/databaseCache";
 import { HistoryRecorder } from "./common/historyRecorder";
+import { ConnectService } from "./connect/connectService";
+import { ClickHouseDialect } from "./dialect/clickHouseDialect";
 import { EsDialect } from "./dialect/esDialect";
 import { MongoDialect } from "./dialect/mongoDialect";
 import { MssqlDIalect } from "./dialect/mssqlDIalect";
 import { MysqlDialect } from "./dialect/mysqlDialect";
 import { PostgreSqlDialect } from "./dialect/postgreSqlDialect";
-import { ClickHouseDialect } from "./dialect/clickHouseDialect";
 import { SqlDialect } from "./dialect/sqlDialect";
+import { SqliTeDialect } from "./dialect/sqliteDialect";
+import { ClickHouseDumpService } from "./dump/clickHouseDumpService";
 import { DumpService } from "./dump/dumpService";
+import { MysqlDumpService } from "./dump/mysqlDumpService";
+import { PostgreDumpService } from "./dump/postgreDumpService";
+import { ClickHouseImortService } from "./import/clickHouseImortService";
 import { MysqlImportService } from "./import/mysqlImportService";
 import { PostgresqlImortService } from "./import/postgresqlImortService";
-import { ClickHouseImortService } from "./import/clickHouseImortService";
 import { SqlServerImportService } from "./import/sqlServerImportService";
 import { MockRunner } from "./mock/mockRunner";
+import { ClickHousePageService } from "./page/clickHousePageService";
 import { EsPageService } from "./page/esPageService";
+import { MongoPageService } from "./page/mongoPageService";
 import { MssqlPageService } from "./page/mssqlPageService";
 import { MysqlPageSerivce } from "./page/mysqlPageSerivce";
 import { PageService } from "./page/pageService";
 import { PostgreSqlPageService } from "./page/postgreSqlPageService";
-import { ClickHousePageService } from "./page/clickHousePageService";
+import { ResourceServer } from "./resourceServer";
 import { MysqlSettingService } from "./setting/MysqlSettingService";
 import { SettingService } from "./setting/settingService";
-import ConnectionProvider from "@/model/ssh/connectionProvider";
-import { SqliTeDialect } from "./dialect/sqliteDialect";
-import { MongoPageService } from "./page/mongoPageService";
-import { HighlightCreator } from "@/provider/codelen/highlightCreator";
-import { SQLSymbolProvide } from "@/provider/sqlSymbolProvide";
-import { MysqlDumpService } from "./dump/mysqlDumpService";
-import { ResourceServer } from "./resourceServer";
-import { PostgreDumpService } from "./dump/postgreDumpService";
-import { ClickHouseDumpService } from "./dump/clickHouseDumpService";
+import { MysqlStatusService } from "./status/mysqlStatusService";
+import { StatusService } from "./status/statusService";
 
 export class ServiceManager {
 
@@ -84,7 +84,7 @@ export class ServiceManager {
         this.initMysqlService();
         res.push(this.initTreeView())
         res.push(this.initTreeProvider())
-        // res.push(vscode.window.createTreeView("github.cweijan.history",{treeDataProvider:new HistoryProvider(this.context)}))
+        // res.push(vscode.window.createTreeView("github.lang2hong.history",{treeDataProvider:new HistoryProvider(this.context)}))
         ServiceManager.instance = this;
         this.isInit = true
         return res
@@ -93,7 +93,7 @@ export class ServiceManager {
 
     private initTreeView() {
         this.provider = new DbTreeDataProvider(this.context, CacheKey.DATBASE_CONECTIONS);
-        const treeview = vscode.window.createTreeView("github.cweijan.mysql", {
+        const treeview = vscode.window.createTreeView("github.lang2hong.mysql", {
             treeDataProvider: this.provider,
         });
         treeview.onDidCollapseElement((event) => {
@@ -107,7 +107,7 @@ export class ServiceManager {
 
     private initTreeProvider() {
         this.nosqlProvider = new DbTreeDataProvider(this.context, CacheKey.NOSQL_CONNECTION);
-        const treeview = vscode.window.createTreeView("github.cweijan.nosql", {
+        const treeview = vscode.window.createTreeView("github.lang2hong.nosql", {
             treeDataProvider: this.nosqlProvider,
             canSelectMany: true,
         });

@@ -187,6 +187,9 @@ ${colDefList.join(",\n")}${pkList.length > 0 ? `,\n    PRIMARY KEY(${pkList.join
         //     const columns = await this.getColumns()
         //     sql = sql.replace('*', columns.join(","))
         // }
+        if (viewId === undefined || viewId == ''){
+            viewId = this.table;
+        }
         QueryUnit.runQuery(sql, this, { viewId });
         ConnectionManager.changeActive(this)
     }

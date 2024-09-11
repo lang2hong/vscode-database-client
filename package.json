@@ -1,9 +1,9 @@
 {
-	"name": "DBCC",
-	"displayName": "DBCC",
-	"description": "DataBase Client Clone",
-	"version": "3.9.11",
-	"publisher": "ErnestDong",
+	"name": "l2h-mysql",
+	"displayName": "l2h-mysql",
+	"description": "DataBase Client Tool",
+	"version": "0.0.4",
+	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
 	"engines": {
 		"vscode": "^1.51.0"
@@ -20,13 +20,13 @@
 		"Redis"
 	],
 	"bugs": {
-		"url": "https://github.com/ErnestDong/vscode-database-client/issues",
-		"email": "dongcy2000@outlook.com"
+		"url": "https://github.com/lang2hong/vscode-database-client/issues",
+		"email": "522306052@qq.com"
 	},
-	"homepage": "https://github.com/ErnestDong/vscode-database-client/blob/master/README.md",
+	"homepage": "https://github.com/lang2hong/vscode-database-client/blob/master/README.md",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ErnestDong/vscode-database-client.git"
+		"url": "https://github.com/lang2hong/vscode-database-client.git"
 	},
 	"activationEvents": [
 		"onStartupFinished"
@@ -79,27 +79,27 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "github-cweijan-mysql",
+					"id": "github-lang2hong-mysql",
 					"title": "Database",
 					"icon": "resources/icon/database-container.svg"
 				},
 				{
-					"id": "github-cweijan-nosql",
+					"id": "github-lang2hong-nosql",
 					"title": "NoSQL",
 					"icon": "resources/image/other-container.png"
 				}
 			]
 		},
 		"views": {
-			"github-cweijan-mysql": [
+			"github-lang2hong-mysql": [
 				{
-					"id": "github.cweijan.mysql",
+					"id": "github.lang2hong.mysql",
 					"name": "Database"
 				}
 			],
-			"github-cweijan-nosql": [
+			"github-lang2hong-nosql": [
 				{
-					"id": "github.cweijan.nosql",
+					"id": "github.lang2hong.nosql",
 					"name": "NoSQL"
 				}
 			]
@@ -545,434 +545,434 @@
 			"view/title": [
 				{
 					"command": "mysql.connection.add",
-					"when": "view =~ /cweijan.+?ql/",
+					"when": "view =~ /lang2hong.+?ql/",
 					"group": "navigation@3"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/",
+					"when": "view =~ /lang2hong.+?ql/",
 					"group": "navigation@2"
 				},
 				{
 					"command": "mysql.history.open",
-					"when": "view == github.cweijan.mysql",
+					"when": "view == github.lang2hong.mysql",
 					"group": "navigation@0"
 				},
 				{
 					"command": "mysql.struct.diff",
-					"when": "view == github.cweijan.mysql",
+					"when": "view == github.lang2hong.mysql",
 					"group": "navigation@-2"
 				},
 				{
 					"command": "mysql.connection.config",
-					"when": "view =~ /cweijan.+?ql/",
+					"when": "view =~ /lang2hong.+?ql/",
 					"group": "navigation@-3"
 				},
 				{
 					"command": "mysql.util.github",
-					"when": "view == github.cweijan.nosql",
+					"when": "view == github.lang2hong.nosql",
 					"group": "navigation@-3"
 				}
 			],
 			"view/item/context": [
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(catalog|esConnection|sshConnection|folder|redisConnection|redisDB|redisFolder|connection|tableGroup|viewGroup|systemViewGroup|triggerGroup|procedureGroup|functionGroup|ftpConnection|ftpFolder)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(catalog|esConnection|sshConnection|folder|redisConnection|redisDB|redisFolder|connection|tableGroup|viewGroup|systemViewGroup|triggerGroup|procedureGroup|functionGroup|ftpConnection|ftpFolder)$/",
 					"group": "inline@-2"
 				},
 				{
 					"command": "mysql.connection.edit",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.connection.disable",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
 					"group": "1_mysql@4"
 				},
 				{
 					"command": "mysql.host.copy",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection)$/",
 					"group": "1_mysql@6"
 				},
 				{
 					"command": "mysql.database.add",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == connection",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == connection",
 					"group": "2_mysql@0"
 				},
 				{
 					"command": "mysql.query.add",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == queryGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == queryGroup",
 					"group": "2_mysql@0"
 				},
 				{
 					"command": "mysql.query.rename",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == query",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == query",
 					"group": "2_mysql@0"
 				},
 				{
 					"command": "mysql.query.run",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == query",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == query",
 					"group": "2_mysql@0"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(esConnection|ftpConnection|ftpFolder)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(esConnection|ftpConnection|ftpFolder)$/",
 					"group": "2_mysql@1"
 				},
 				{
 					"command": "mysql.server.info",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == connection",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == connection",
 					"group": "4_mysql@1"
 				},
 				{
 					"command": "mysql.data.import",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == connection",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == connection",
 					"group": "8_mysql@1"
 				},
 				{
 					"command": "mysql.connection.delete",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(connection|esConnection|redisConnection|ftpConnection|sshConnection)$/",
 					"group": "10mysql@2"
 				},
 				{
 					"command": "mysql.database.add",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == connection",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == connection",
 					"group": "inline@0"
 				},
 				{
 					"command": "mysql.connection.terminal",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(connection|catalog)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(connection|catalog)$/",
 					"group": "inline@2"
 				},
 				{
 					"command": "mysql.query.switch",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(catalog|database|esConnection|esIndex|mongoTable)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(catalog|database|esConnection|esIndex|mongoTable)$/",
 					"group": "inline@5"
 				},
 				{
 					"command": "mysql.query.add",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == queryGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == queryGroup",
 					"group": "inline@0"
 				},
 				{
 					"command": "mysql.query.run",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == query",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == query",
 					"group": "inline@0"
 				},
 				{
 					"command": "mysql.template.user",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == userGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == userGroup",
 					"group": "1_mysql@1"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == userGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == userGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.user",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == userGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == userGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.change.user",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == user",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == user",
 					"group": "1_mysql@-1"
 				},
 				{
 					"command": "mysql.user.grant",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == user",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == user",
 					"group": "1_mysql@0"
 				},
 				{
 					"command": "mysql.delete.user",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == user",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == user",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.name.copy",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(catalog|user|database|esColumn|column|table|view|esIndex|procedure|function|trigger|mongoTable|redisKey)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(catalog|user|database|esColumn|column|table|view|esIndex|procedure|function|trigger|mongoTable|redisKey)$/",
 					"group": "-1_mysql@-5"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "3_mysql@0"
 				},
 				{
 					"command": "mysql.db.truncate",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "4_mysql@4"
 				},
 				{
 					"command": "mysql.db.drop",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /(database|catalog)/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /(database|catalog)/",
 					"group": "4_mysql@5"
 				},
 				{
 					"command": "mysql.data.export",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "mysql@5"
 				},
 				{
 					"command": "mysql.struct.export",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "mysql@6"
 				},
 				{
 					"command": "mysql.document.generate",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "mysql@7"
 				},
 				{
 					"command": "mysql.data.import",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == database",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == database",
 					"group": "mysql@8"
 				},
 				{
 					"command": "mysql.table.show",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(table|view)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(table|view)$/",
 					"group": "inline@3"
 				},
 				{
 					"command": "mysql.table.drop",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table && false",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table && false",
 					"group": "inline@1"
 				},
 				{
 					"command": "mysql.table.design",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table",
 					"group": "1_inline@0"
 				},
 				{
 					"command": "mysql.template.sql",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table",
 					"group": "inline@5"
 				},
 				{
 					"command": "mysql.table.source",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(table)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(table)$/",
 					"group": "1_inline@2"
 				},
 				{
 					"command": "mysql.view.source",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(view)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(view)$/",
 					"group": "1_inline@2"
 				},
 				{
 					"command": "mysql.column.add",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(table|column)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(table|column)$/",
 					"group": "1_inline@6"
 				},
 				{
 					"command": "mysql.mock.table",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table",
 					"group": "1_inline1@1"
 				},
 				{
 					"command": "mysql.data.export",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(table|view)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(table|view)$/",
 					"group": "1_inline1@2"
 				},
 				{
 					"command": "mysql.struct.export",
-					"when": "view =~ /cweijan.+?ql/ && viewItem =~ /^(table|view)$/",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem =~ /^(table|view)$/",
 					"group": "1_inline1@3"
 				},
 				{
 					"command": "mysql.table.truncate",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table",
 					"group": "2_mysql@1"
 				},
 				{
 					"command": "mysql.table.drop",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == table",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == table",
 					"group": "2_mysql@2"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == tableGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == tableGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.table",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == tableGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == tableGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.column.up",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == column",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == column",
 					"group": "inline@0"
 				},
 				{
 					"command": "mysql.column.down",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == column",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == column",
 					"group": "inline@2"
 				},
 				{
 					"command": "mysql.column.createIndex",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == column",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == column",
 					"group": "3_mysql@1"
 				},
 				{
 					"command": "mysql.column.drop",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == column",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == column",
 					"group": "3_mysql@4"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == viewGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == viewGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.view",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == viewGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == viewGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.delete.view",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == view",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == view",
 					"group": "1_mysql@1"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == procedureGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == procedureGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.procedure",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == procedureGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == procedureGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.delete.procedure",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == procedure",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == procedure",
 					"group": "2_mysql@1"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == functionGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == functionGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.function",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == functionGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == functionGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.delete.function",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == function",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == function",
 					"group": "1_mysql@1"
 				},
 				{
 					"command": "mysql2.refresh",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == triggerGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == triggerGroup",
 					"group": "1_mysql@2"
 				},
 				{
 					"command": "mysql.template.trigger",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == triggerGroup",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == triggerGroup",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.delete.trigger",
-					"when": "view =~ /cweijan.+?ql/ && viewItem == trigger",
+					"when": "view =~ /lang2hong.+?ql/ && viewItem == trigger",
 					"group": "1_mysql@1"
 				},
 				{
 					"command": "mysql.connection.terminal",
-					"when": "view == github.cweijan.nosql && viewItem == redisConnection",
+					"when": "view == github.lang2hong.nosql && viewItem == redisConnection",
 					"group": "inline@1"
 				},
 				{
 					"command": "mysql.redis.connection.status",
-					"when": "view == github.cweijan.nosql && viewItem == redisConnection",
+					"when": "view == github.lang2hong.nosql && viewItem == redisConnection",
 					"group": "connection"
 				},
 				{
 					"command": "mysql.redis.key.del",
-					"when": "view == github.cweijan.nosql && viewItem =~ /^(redisKey|redisFolder)$/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /^(redisKey|redisFolder)$/",
 					"group": "inline"
 				},
 				{
 					"command": "mysql.redis.key.del",
-					"when": "view == github.cweijan.nosql && viewItem =~ /^(redisKey|redisFolder)$/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /^(redisKey|redisFolder)$/",
 					"group": "mysql"
 				},
 				{
 					"command": "mysql.connection.delete",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
 					"group": "inline@0"
 				},
 				{
 					"command": "mysql.connection.terminal",
-					"when": "view == github.cweijan.nosql && viewItem == sshConnection",
+					"when": "view == github.lang2hong.nosql && viewItem == sshConnection",
 					"group": "inline@1"
 				},
 				{
 					"command": "mysql.ssh.host.copy",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
 					"group": "0_connection@-2"
 				},
 				{
 					"command": "mysql.ssh.forward.port",
-					"when": "view == github.cweijan.nosql && viewItem == sshConnection",
+					"when": "view == github.lang2hong.nosql && viewItem == sshConnection",
 					"group": "1_nosql@0"
 				},
 				{
 					"command": "mysql.ssh.socks.port",
-					"when": "view == github.cweijan.nosql && viewItem == sshConnection",
+					"when": "view == github.lang2hong.nosql && viewItem == sshConnection",
 					"group": "1_nosql@1"
 				},
 				{
 					"command": "mysql.ssh.file.new",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
 					"group": "2_connection@2"
 				},
 				{
 					"command": "mysql.ssh.folder.new",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(sshConnection|ftpConnection)/",
 					"group": "2_connection@4"
 				},
 				{
 					"command": "mysql.ssh.path.copy",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(folder|file|link)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(folder|file|link)/",
 					"group": "ssh@1"
 				},
 				{
 					"command": "mysql.ssh.folder.open",
-					"when": "view == github.cweijan.nosql && viewItem == folder",
+					"when": "view == github.lang2hong.nosql && viewItem == folder",
 					"group": "ssh@2"
 				},
 				{
 					"command": "mysql.ssh.file.new",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(folder|ftpFolder)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(folder|ftpFolder)/",
 					"group": "folder@0"
 				},
 				{
 					"command": "mysql.ssh.folder.new",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(folder|ftpFolder)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(folder|ftpFolder)/",
 					"group": "folder@1"
 				},
 				{
 					"command": "mysql.ssh.file.upload",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(folder|ftpFolder)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(folder|ftpFolder)/",
 					"group": "inline@-2"
 				},
 				{
 					"command": "mysql.ssh.file.delete",
-					"when": "view == github.cweijan.nosql && viewItem =~ /^(folder|ftpFolder|file|ftpFile|redisFolder)$/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /^(folder|ftpFolder|file|ftpFile|redisFolder)$/",
 					"group": "folder@4"
 				},
 				{
 					"command": "mysql.ssh.file.download",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(folder|file|ftpFile)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(folder|file|ftpFile)/",
 					"group": "file@1"
 				},
 				{
 					"command": "mysql.ssh.file.download",
-					"when": "view == github.cweijan.nosql && viewItem =~ /(file|ftpFile)/",
+					"when": "view == github.lang2hong.nosql && viewItem =~ /(file|ftpFile)/",
 					"group": "inline@1"
 				}
 			]

@@ -22,7 +22,7 @@
         Insert</el-button>
       <br /> <br /> <br />
       <div style="width:100%;" v-if="previewSQL">
-        <el-input type="textarea" :autosize="{ minRows:2, maxRows:6}" v-model="previewSQL" class="sql-pannel" />
+        <el-input type="textarea" :autosize="{ minRows:6, maxRows:10}" v-model="previewSQL" class="sql-pannel" />
       </div>
     </span>
   </el-dialog>

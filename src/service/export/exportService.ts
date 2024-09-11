@@ -1,11 +1,11 @@
-import * as vscode from "vscode";
+import { DatabaseType } from "@/common/constants";
 import { FieldInfo } from "@/common/typeDef";
 import * as fs from "fs";
-import { Console } from "../../common/Console";
-import { ExportContext, ExportType } from "./exportContext";
+import * as vscode from "vscode";
 import { ProgressLocation } from "vscode";
+import { Console } from "../../common/Console";
 import { ConnectionManager } from "../connectionManager";
-import { DatabaseType } from "@/common/constants";
+import { ExportContext, ExportType } from "./exportContext";
 
 export class ExportService {
 
@@ -109,10 +109,10 @@ export class ExportService {
             let columns = "";
             let values = "";
             for (const key in row) {
-                columns += `${key},`
+                columns += `\`${key}\`,`
                 values += `${row[key] != null ? `'${row[key]}'` : 'null'},`
             }
-            sql += `insert into ${exportContext.table}(${columns.replace(/.$/, '')}) values(${values.replace(/.$/, '')});\n`
+            sql += `insert into \`${exportContext.table}\`(${columns.replace(/.$/, '')}) values(${values.replace(/.$/, '')});\n`
         }
         fs.writeFileSync(exportPath, sql);
 

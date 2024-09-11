@@ -1,6 +1,7 @@
 "use strict";
 
 import * as vscode from "vscode";
+import { Console } from "./common/Console";
 import { CodeCommand, DatabaseType, ModelType, Template } from "./common/constants";
 import { ConnectionNode } from "./model/database/connectionNode";
 import { SchemaNode } from "./model/database/schemaNode";
@@ -17,31 +18,30 @@ import { TriggerGroup } from "./model/main/triggerGroup";
 import { ViewGroup } from "./model/main/viewGroup";
 import { ViewNode } from "./model/main/viewNode";
 import { ColumnNode } from "./model/other/columnNode";
-import { Console } from "./common/Console";
 // Don't change last order, it will occur circular reference
-import { ServiceManager } from "./service/serviceManager";
-import { QueryUnit } from "./service/queryUnit";
-import { FileManager, FileModel } from "./common/filesManager";
-import { ConnectionManager } from "./service/connectionManager";
-import { QueryNode } from "./model/query/queryNode";
-import { QueryGroup } from "./model/query/queryGroup";
-import { Node } from "./model/interface/node";
-import { DbTreeDataProvider } from "./provider/treeDataProvider";
+import { init } from "vscode-nls-i18n";
+import { FileModel } from "./common/filesManager";
 import { UserNode } from "./model/database/userNode";
 import { EsConnectionNode } from "./model/es/model/esConnectionNode";
 import { ESIndexNode } from "./model/es/model/esIndexNode";
 import { activeEs } from "./model/es/provider/main";
-import { RedisConnectionNode } from "./model/redis/redisConnectionNode";
+import { FTPFileNode } from "./model/ftp/ftpFileNode";
+import { Node } from "./model/interface/node";
+import { QueryGroup } from "./model/query/queryGroup";
+import { QueryNode } from "./model/query/queryNode";
 import KeyNode from "./model/redis/keyNode";
-import { DiffService } from "./service/diff/diffService";
-import { DatabaseCache } from "./service/common/databaseCache";
+import { RedisConnectionNode } from "./model/redis/redisConnectionNode";
+import { RemainNode } from "./model/redis/remainNode";
 import { FileNode } from "./model/ssh/fileNode";
 import { SSHConnectionNode } from "./model/ssh/sshConnectionNode";
-import { FTPFileNode } from "./model/ftp/ftpFileNode";
 import { HistoryNode } from "./provider/history/historyNode";
+import { DbTreeDataProvider } from "./provider/treeDataProvider";
+import { DatabaseCache } from "./service/common/databaseCache";
 import { ConnectService } from "./service/connect/connectService";
-import { RemainNode } from "./model/redis/remainNode";
-import { init } from "vscode-nls-i18n";
+import { ConnectionManager } from "./service/connectionManager";
+import { DiffService } from "./service/diff/diffService";
+import { QueryUnit } from "./service/queryUnit";
+import { ServiceManager } from "./service/serviceManager";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -111,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
             // externel data
             ...{
                 "mysql.util.github": () => {
-                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/cweijan/vscode-database-client'));
+                    vscode.env.openExternal(vscode.Uri.parse('https://github.com/lang2hong/vscode-database-client'));
                 },
                 "mysql.struct.diff": () => {
                     new DiffService().startDiff(serviceManager.provider);

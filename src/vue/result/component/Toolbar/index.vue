@@ -10,10 +10,10 @@
     <el-button icon="el-icon-delete" style="color:#f56c6c" @click="$emit('deleteConfirm');" title="delete"></el-button>
     <el-button icon="el-icon-bottom" @click="$emit('export');" style="color:var(--vscode-charts-blue);" title="Export"></el-button>
     <el-button icon="icon-run" title="Execute Sql" style="color: var(--vscode-terminal-ansiBrightGreen);" @click="$emit('run');"></el-button>
-    <div style="display:inline-block;font-size:14px;padding-left: 8px;" class="el-pagination__total">
+    <div style="display:inline-block;font-size:14px;padding-left: 8px;float:right;" class="el-pagination__total">
       {{$t('result.cost')}}: {{result.costTime}}ms
     </div>
-    <div style="display:inline-block">
+    <div style="display:inline-block;float:right;">
       <el-pagination @size-change="changePageSize" @current-change="page=>$emit('changePage',page,true)" @next-click="()=>$emit('changePage',1)" @prev-click="()=>$emit('changePage',-1)" :current-page.sync="page.pageNum" :small="true" :page-size="page.pageSize"  :layout="page.total!=null?'prev,pager, next, total':'prev, next'" :total="page.total">
       </el-pagination>
     </div>
