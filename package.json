@@ -1,10 +1,11 @@
 {
-	"name": "l2h-mysql",
-	"displayName": "l2h-mysql",
+	"name": "db-client",
+	"displayName": "DB Client",
 	"description": "DataBase Client Tool",
-	"version": "0.0.4",
+	"version": "0.0.2",
 	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
+	"license": "MIT",
 	"engines": {
 		"vscode": "^1.51.0"
 	},
@@ -1060,6 +1061,9 @@
 		"publich": "vsce publish",
 		"vscode:prepublish": "npm run build"
 	},
+	"optionalDependencies": {
+		"cpu-features": "*"
+	},
 	"devDependencies": {
 		"@antv/g2": "^4.0.9",
 		"@types/ioredis": "^4.22.0",
@@ -1078,20 +1082,20 @@
 		"postcss": "^8.2.1",
 		"postcss-loader": "^4.1.0",
 		"style-loader": "^1.2.1",
-		"tailwindcss": "^2.0.2",
+		"tailwindcss": "^2.2.19",
 		"ts-loader": "^7.0.5",
 		"typescript": "^3.8.3",
 		"url-loader": "^4.1.0",
+		"vsce": "^2.11.0",
 		"vue-loader": "^15.9.2",
 		"vue-style-loader": "^4.1.2",
 		"vue-template-compiler": "^2.6.11",
 		"webpack": "^4.43.0",
-		"vsce": "^2.11.0",
 		"webpack-cli": "^3.3.11"
 	},
 	"dependencies": {
 		"@apla/clickhouse": "^1.6.4",
-		"aws4": "^1.11.0",
+				"aws4": "^1.11.0",
 		"axios": "^0.21.1",
 		"command-exists": "^1.2.9",
 		"comment-json": "4.1.0",
@@ -1099,7 +1103,7 @@
 		"date-format": "^3.0.0",
 		"debug": "^4.3.2",
 		"deepmerge": "^3.2.0",
-		"element-ui": "^2.13.2",
+		"element-ui": "^2.15.14",
 		"g2": "^2.3.13",
 		"ioredis": "^4.23.0",
 		"json-format-highlight": "^1.0.4",
