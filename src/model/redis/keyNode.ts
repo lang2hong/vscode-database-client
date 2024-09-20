@@ -3,7 +3,7 @@ import { Util } from "@/common/util";
 import { ViewManager } from "@/common/viewManager";
 import { Node } from "@/model/interface/node";
 import * as path from "path";
-import { commands, ThemeIcon, TreeItemCollapsibleState, window } from "vscode";
+import { ThemeIcon, TreeItemCollapsibleState, commands, window } from "vscode";
 import RedisBaseNode from "./redisBaseNode";
 
 export default class KeyNode extends RedisBaseNode {
@@ -53,7 +53,7 @@ export default class KeyNode extends RedisBaseNode {
         let content: any;
         switch (type) {
             case RedisType.string:
-                content = await client.get(this.label)
+                content = await client.getBuffer(this.label)
                 break;
             case RedisType.hash:
                 const hall = await client.hgetall(this.label)

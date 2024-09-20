@@ -1,24 +1,24 @@
-import Vue from 'vue'
-import App from './App'
+import '@/../public/theme/custom.css';
+import '@/../public/theme/element.css';
 import ElementUI from 'element-ui';
-import locale from 'element-ui/lib/locale/lang/en'
-import UmyTable from 'umy-table'
+import locale from 'element-ui/lib/locale/lang/en';
+import "tailwindcss/tailwind.css";
+import UmyTable from 'umy-table';
 import 'umy-table/lib/theme-chalk/index.css';
-import '@/../public/theme/element.css'
-import '@/../public/theme/custom.css'
-import "tailwindcss/tailwind.css"
-import Contextmenu from "./Contextmenu"
-import VueI18n from 'vue-i18n'
-import {messages} from "./message"
-import VueRouter from 'vue-router'
+import Vue from 'vue';
+import VueI18n from 'vue-i18n';
+import VueRouter from 'vue-router';
+import App from './App';
+import Contextmenu from "./Contextmenu";
 import connect from "./connect";
-import status from "./status";
 import design from "./design";
-import structDiff from "./structDiff";
-import keyView from "./redis/keyView";
-import terminal from "./redis/terminal";
-import redisStatus from "./redis/redisStatus";
 import forward from "./forward";
+import { messages } from "./message";
+import keyView from "./redis/keyView";
+import redisStatus from "./redis/redisStatus";
+import terminal from "./redis/terminal";
+import status from "./status";
+import structDiff from "./structDiff";
 import sshTerminal from "./xterm";
 
 Vue.use(Contextmenu).use(VueRouter)
@@ -27,7 +27,6 @@ Vue.use(Contextmenu).use(VueRouter)
   .use(UmyTable);
 
 Vue.config.productionTip = false
-
 
 const i18n = new VueI18n({
   locale:'en',

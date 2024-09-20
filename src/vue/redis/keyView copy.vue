@@ -14,7 +14,7 @@
 
         <!-- key ttl -->
         <el-form-item>
-          <el-input v-model="edit.ttl" @keyup.enter.native="ttlKey" type='number' size="small">
+          <el-input v-model="edit.ttl" @keyup.enter.native="ttlKey" type='number' size="medium">
             <span slot="prepend">TTL</span>
             <i class="el-icon-check el-input__icon cursor-pointer" slot="suffix" :title="'Click to change ttl'" @click="ttlKey">
             </i>
@@ -43,7 +43,14 @@
         <el-form-item>
           <span v-if='binary' class='formater-binary'>Hex</span>
           <div class="value-panel">
-            <FormarViewer :selectedView="selectedView" @changeSelectedView="changeSelectedView" @changeValue="changeByKeyContent" :content="edit.content" :remainHeight="remainHeight"></FormarViewer>
+            <!-- 字符串 -->
+            <div v-if="selectedView=='ViewerText'">
+              <el-input type='textarea' :autosize="{ minRows:6}" v-model='edit.content' :style="'height:'+ remainHeight+'px'"></el-input>
+            </div>
+            <!-- Json -->
+            <div v-if="selectedView=='ViewerJson'">
+              <pre v-html="editTemp" contenteditable="true" class="json-panel" @input="changeByJson" :style="'height:'+ remainHeight+'px'"></pre>
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -91,7 +98,7 @@
             <el-table-column sort-by="value" resizable sortable show-overflow-tooltip label="Value" align="center">
               <template slot-scope="scope">
                 <span v-if="key.type=='hash'" v-text="scope.row.value"></span>
-                <span v-else-if="key.type=='zset'" v-text="objectUtil.cutString(objectUtil.bufToString(scope.row.value), 1000)"></span>
+                <span v-else-if="key.type=='zset'" v-text="scope.row.value"></span>
                 <span v-else v-text="scope.row"></span>
               </template>
             </el-table-column>
@@ -112,8 +119,8 @@
 </template>
 
 <script>
-import FormarViewer from '@/vue/redis/FormarViewer.vue';
-import { objectUtil } from "../util/objectUtil";
+import formatHighlight from "json-format-highlight";
+
 import { getVscodeEvent } from "../util/vscode";
 const prettyBytes = require("pretty-bytes");
 let vscodeEvent;
@@ -124,7 +131,6 @@ export default {
   },
   data() {
     return {
-      objectUtil:objectUtil,
       addKey: "",
       addData: "",
       searchInput: "",
@@ -144,16 +150,10 @@ export default {
       viewers: [
         { value: "ViewerText", text: "Text" },
         { value: "ViewerJson", text: "Json" },
-        { value: "ViewerJavaSerialize", text: "JavaSerialize" },
-        { value: "ViewerHex", text: "Hex" },
-        { value: "ViewerBinary", text: "Binary" }
       ],
       textrows: 6,
     };
   },
-  components: {
-		FormarViewer,
-	},
   mounted() {
     const infoForm=this.$refs.infoForm.$el;
     const updateHeight=()=>{
@@ -170,9 +170,9 @@ export default {
         this.key = data.res;
         this.edit = this.deepClone(data.res);
         if (this.key.type == "string") {
-          // const isJSON = this.edit.content.match(/^\s*[{[]/);
-          // this.selectedView = isJSON ? "ViewerJson" : "ViewerText";
-          // this.editTemp = isJSON ? this.jsonContent() : this.edit.content;
+          const isJSON = this.edit.content.match(/^\s*[{[]/);
+          this.selectedView = isJSON ? "ViewerJson" : "ViewerText";
+          this.editTemp = isJSON ? this.jsonContent() : this.edit.content;
         }
       })
       .on("msg", (content) => {
@@ -216,15 +216,45 @@ export default {
     },
   },
   methods: {
-    changeByKeyContent(value){
-      console.log("keyView",value);
-      this.edit.content = value;
+    changeByJson(event) {
+      this.edit.content = event.target.innerText;
     },
-    changeByRowContent(value){
-      console.log("keyView",value);
-    },
-    changeSelectedView(value){
-      this.selectedView = value;
+    jsonContent() {
+      try {
+        let colorOptions = {
+          keyColor: "#0451a5",
+          numberColor: "#098658",
+          stringColor: "#a31515",
+          trueColor: "#0000ff",
+          falseColor: "#0000ff",
+          nullColor: "#0000ff",
+        };
+        const darkTheme = {
+          keyColor: "#9cdcfe",
+          numberColor: "#9cdcfe",
+          stringColor: "#ce9178",
+          trueColor: "#569cd6",
+          falseColor: "#569cd6",
+          nullColor: "#569cd6",
+        };
+        if (document.body.dataset.vscodeThemeKind == "vscode-dark") {
+          colorOptions =
+            document.body.dataset.vscodeThemeName == "Dark (Visual Studio)"
+              ? darkTheme
+              : {
+                  keyColor: "var(--vscode-terminal-ansiMagenta)",
+                  trueColor: "var(--vscode-terminal-ansiBlue)",
+                  falseColor: "var(--vscode-terminal-ansiBlue)",
+                  nullColor: "var(--vscode-terminal-ansiBlue)",
+                  stringColor: "var(--vscode-terminal-ansiGreen)",
+                  numberColor: "var(--vscode-terminal-ansiYellow)",
+                };
+        }
+        return formatHighlight(JSON.parse(this.edit.content), colorOptions);
+      } catch (error) {
+        console.log(error);
+        return this.edit.content;
+      }
     },
     refresh() {
       vscodeEvent.emit("refresh", { key: this.key });
@@ -362,16 +392,11 @@ export default {
 .format-selector {
   margin-left: 10px;
   margin-right: 10px;
-  width: 180px;
+  width: 122px;
 }
 
 .format-selector .el-input__inner {
   height: 22px;
-}
-
-.el-select-dropdown .el-select-dropdown__item{
-  height: 25px;
-  line-height: 25px;
 }
 
 .dark-mode .text-formated-container {
