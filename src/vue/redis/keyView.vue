@@ -33,6 +33,7 @@
             </el-select>
             <!-- save btn -->
             <el-button type="primary" @click="update()" size="small">Save</el-button>
+            <!-- <el-button type="primary" @click="copyContent()" size="small">Copy</el-button> -->
           </template>
         </el-form-item>
       </el-form>
@@ -43,7 +44,7 @@
         <el-form-item>
           <span v-if='binary' class='formater-binary'>Hex</span>
           <div class="value-panel">
-            <FormarViewer :selectedView="selectedView" @changeSelectedView="changeSelectedView" @changeValue="changeByKeyContent" :content="edit.content" :remainHeight="remainHeight"></FormarViewer>
+            <FormarViewer ref="formarViewer" :selectedView="selectedView" @changeSelectedView="changeSelectedView" :content="edit.content" :remainHeight="remainHeight"></FormarViewer>
           </div>
         </el-form-item>
       </el-form>
@@ -58,13 +59,14 @@
           <el-pagination style="display:inline-block" class="pagenation-table-page-container" :total="dataCount" :page-size.sync="pageSize" :current-page.sync="pageIndex" :page-sizes="[20,50,100, 200, 300]" layout="total, sizes, prev, pager, next, jumper" background>
           </el-pagination>
           <!-- edit & add dialog -->
-          <el-dialog :title="dialogTitle" :visible.sync="editDialogVisiable" :closeOnClickModal="false">
+          <el-dialog class="abow_dialog" :title="dialogTitle" :visible.sync="editDialogVisiable" :closeOnClickModal="false">
             <el-form>
               <el-form-item label="key" v-if="key.type=='hash'">
-                <el-input v-model="addKey"></el-input>
+                <el-input v-model="addKey" label="small"></el-input>
               </el-form-item>
               <el-form-item label="Value">
-                <el-input v-model="addData"></el-input>
+                <!-- <el-input v-model="addData"></el-input> -->
+                <FormarViewer ref="formarViewer" :selectedView="selectedView" @changeSelectedView="changeSelectedView" :content="addData" :remainHeight="300"></FormarViewer>
               </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -80,7 +82,7 @@
             </el-table-column>
             <el-table-column v-if="key.type=='hash'" sort-by="key" resizable sortable label="Key" align="center">
               <template slot-scope="scope">
-                {{scope.row.key}}
+                {{objectUtil.cutString(objectUtil.bufToString(scope.row.key), 1000)}}
               </template>
             </el-table-column>
             <el-table-column v-if="key.type=='zset'" sort-by="score" resizable sortable label="Score" align="center" width="100">
@@ -90,9 +92,9 @@
             </el-table-column>
             <el-table-column sort-by="value" resizable sortable show-overflow-tooltip label="Value" align="center">
               <template slot-scope="scope">
-                <span v-if="key.type=='hash'" v-text="scope.row.value"></span>
-                <span v-else-if="key.type=='zset'" v-text="objectUtil.cutString(objectUtil.bufToString(scope.row.value), 1000)"></span>
-                <span v-else v-text="scope.row"></span>
+                <span v-if="key.type=='hash'" v-text="objectUtil.bufToString(scope.row.value)"></span>
+                <span v-else-if="key.type=='zset'" v-text="objectUtil.bufToString(scope.row.value)"></span>
+                <span v-else v-text="objectUtil.bufToString(scope.row)"></span>
               </template>
             </el-table-column>
             <el-table-column label="Operation" width="150" align="center">
@@ -113,7 +115,7 @@
 
 <script>
 import FormarViewer from '@/vue/redis/FormarViewer.vue';
-import { objectUtil } from "../util/objectUtil";
+import { objectUtil } from "@/vue/util/objectUtil";
 import { getVscodeEvent } from "../util/vscode";
 const prettyBytes = require("pretty-bytes");
 let vscodeEvent;
@@ -146,7 +148,14 @@ export default {
         { value: "ViewerJson", text: "Json" },
         { value: "ViewerJavaSerialize", text: "JavaSerialize" },
         { value: "ViewerHex", text: "Hex" },
-        { value: "ViewerBinary", text: "Binary" }
+        { value: "ViewerBinary", text: "Binary" },
+        { value: "ViewerBrotli", text: "Brotli" },
+        { value: "ViewerDeflate", text: "Deflate" },
+        { value: "ViewerDeflateRaw", text: "DeflateRaw" },
+        { value: "ViewerGzip", text: "Gzip" },
+        { value: "ViewerPHPSerialize", text: "PHPSerialize" },
+        // { value: "ViewerPickle", text: "Pickle" },
+        // { value: "ViewerProtobuf", text: "Protobuf" },
       ],
       textrows: 6,
     };
@@ -216,13 +225,6 @@ export default {
     },
   },
   methods: {
-    changeByKeyContent(value){
-      console.log("keyView",value);
-      this.edit.content = value;
-    },
-    changeByRowContent(value){
-      console.log("keyView",value);
-    },
     changeSelectedView(value){
       this.selectedView = value;
     },
@@ -268,6 +270,12 @@ export default {
       });
     },
     update() {
+      const content = this.$refs.formarViewer.getContent();
+      // viewer check failed, do not save
+      if (content === false) {
+        return;
+      }
+      this.edit.content = content;
       vscodeEvent.emit("update", {
         key: {
           name: this.key.name,
@@ -362,7 +370,7 @@ export default {
 .format-selector {
   margin-left: 10px;
   margin-right: 10px;
-  width: 180px;
+  width: 122px;
 }
 
 .format-selector .el-input__inner {
@@ -414,4 +422,27 @@ export default {
 .el-form-item__content .el-input-group {
   vertical-align: baseline;
 }
+
+.abow_dialog {
+    display: flex;
+    justify-content: center;
+    align-items: Center;
+    overflow: hidden;
+    .el-dialog {
+        margin: 0 auto !important;
+        height: 90%;
+        overflow: hidden;
+        .el-dialog__body {
+            position: absolute;
+            left: 0;
+            top: 54px;
+            bottom: 0;
+            right: 0;
+            padding: 0;
+            z-index: 1;
+            overflow: hidden;
+            overflow-y: auto;
+        }
+    }
+  }
 </style>

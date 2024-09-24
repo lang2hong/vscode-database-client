@@ -2,7 +2,7 @@
 	"name": "db-client",
 	"displayName": "DB Client",
 	"description": "DataBase Client Tool",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
 	"license": "MIT",
@@ -86,7 +86,7 @@
 				},
 				{
 					"id": "github-lang2hong-nosql",
-					"title": "NoSQL",
+					"title": "Redis",
 					"icon": "resources/image/other-container.png"
 				}
 			]
@@ -1074,10 +1074,11 @@
 		"@types/ssh2": "^0.5.43",
 		"@types/tedious": "^4.0.3",
 		"@types/vscode": "1.51.0",
+		"babel-loader": "^8.4.1",
 		"copy-webpack-plugin": "^6.3.0",
 		"css-loader": "^3.5.3",
 		"esbuild": "^0.12.16",
-		"file-loader": "^6.0.0",
+		"file-loader": "^6.2.0",
 		"html-webpack-plugin": "^4.3.0",
 		"postcss": "^8.2.1",
 		"postcss-loader": "^4.1.0",
@@ -1108,7 +1109,6 @@
 		"element-ui": "^2.15.14",
 		"g2": "^2.3.13",
 		"ioredis": "^4.23.0",
-		"java-deserialization": "^0.1.0",
 		"java-object-serialization": "^0.1.1",
 		"json-format-highlight": "^1.0.4",
 		"lodash": "^4.17.20",

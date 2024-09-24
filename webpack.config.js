@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const isProd = process.argv.indexOf('--mode=production') >= 0;
 var webpack = require('webpack');
-
+  
 module.exports = [
     {
         target: "node",
@@ -23,7 +23,7 @@ module.exports = [
         externals: {
             vscode: 'commonjs vscode',
             mockjs: 'mockjs vscode',
-            'mongodb-client-encryption':'mongodb-client-encryption'
+            'mongodb-client-encryption': 'mongodb-client-encryption'
         },
         resolve: {
             extensions: ['.ts', '.js'],
@@ -35,7 +35,7 @@ module.exports = [
             new webpack.IgnorePlugin(/^(pg-native|cardinal|encoding|aws4|cpu-features|buffer-indexof-polyfill)$/)
         ],
         stats: {
-            warningsFilter: [/critical dependency:/i,/sshcrypto/],
+            warningsFilter: [/critical dependency:/i, /sshcrypto/],
         },
         module: { rules: [{ test: /\.ts$/, exclude: /(node_modules|bin)/, use: ['ts-loader'] }] },
         optimization: { minimize: isProd },
@@ -46,7 +46,7 @@ module.exports = [
     {
         entry: {
             app: './src/vue/main.js',
-            query: './src/vue/result/main.js'
+            query: './src/vue/result/main.js',
         },
         plugins: [
             new VueLoaderPlugin(),
@@ -55,7 +55,7 @@ module.exports = [
             new CopyWebpackPlugin({
                 patterns: [{ from: 'public', to: './webview' }]
             }),
-        ],
+                    ],
         output: {
             path: path.resolve(__dirname, 'out'),
             filename: 'webview/js/[name].js'
@@ -79,6 +79,10 @@ module.exports = [
                     vendor: { name: "vendor", test: /[\\/]node_modules[\\/]/, chunks: "all", priority: -1 }
                 }
             }
+        },
+        performance: {
+            maxEntrypointSize: 50000000,
+            maxAssetSize: 30000000,
         },
         watch: !isProd,
         mode: isProd ? 'production' : 'development',

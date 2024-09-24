@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- </textarea> -->
-    <el-input type='textarea' :autosize="autosize" :disabled="disabled" v-model='tempContent' @input="chanageValue()" :style="'height:'+ remainHeight+'px'"></el-input>
+    <el-input ref='editor' class="readonly" type='textarea' :autosize="autosize" :disabled="disabled" v-model='editContent' :style="'height:' + remainHeight + 'px'"></el-input>
   </div>
 </template>
 
@@ -10,10 +10,10 @@ import { objectUtil } from "@/vue/util/objectUtil";
 export default {
   data() {
     return {
-      tempContent:null,
       autosize: {
         minRows: 30
-      }
+      },
+      editContent:null
     };
   },
   props: {
@@ -22,24 +22,34 @@ export default {
     remainHeight: { type: Number, default: window.innerHeight - 100 }
   },
   watch: {
-    content:{
-      handler (newVal) {
-        this.tempContent = newVal.toString('utf8');
+    content: {
+      handler(newVal) {
+        this.editContent = this.content.toString('utf8');
       },
       deep: true,
-	    immediate: true,
+      immediate: true,
     }
   },
-  computed:{
-
+  computed: {
   },
   methods: {
-    chanageValue(){
-      this.$emit("changeValue",this.tempContent);
-    }
+    getContent() {
+      return this.editContent;
+    },
   },
   mounted() {
+    this.editContent = this.content.toString('utf8');
     // console.log("ViewerText content",this.content);
   },
 };
 </script>
+
+<style scoped>
+:deep(.readonly .el-textarea__inner) {
+    background-color: var(--vscode-editor-background);
+    font-family: var(--vscode-editor-font-family);
+    font-weight: var(--vscode-editor-font-weight);
+    font-size: var(--vscode-editor-font-size);
+    color: var(--vscode-foreground);
+}
+</style>

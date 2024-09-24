@@ -1,29 +1,25 @@
 <template>
   <div>
-    <!-- <pre ref='editor' v-html="formatContent" :disabled="disabled" contenteditable="true" class="json-panel" @input="changeByJson" :style="'height:'+ remainHeight+'px'"></pre> -->
     <JsonEditor ref='editor' :content='content' :readOnly='disabled||false' :remainHeight="remainHeight"></JsonEditor>
   </div>
 </template>
 
 <script>
 import JsonEditor from '@/vue/redis/JsonEditor.vue';
-import { objectUtil } from "@/vue/util/objectUtil";
-import formatHighlight from "json-format-highlight";
-const JSONbig = require('@qii404/json-bigint')({ useNativeBigInt: false });
-
+import { Parser } from 'pickleparser';
 export default {
   data() {
     return {
     };
   },
-  props: {
-    content: { default: () => Buffer.from('') },
-    disabled: { type: Boolean, default: false },
-    remainHeight: { type: Number, default: window.innerHeight - 100 }
-  },
   components: {
 		JsonEditor,
 	},
+  props: {
+    content: { default: () => Buffer.from('') },
+    disabled: { type: Boolean, default: true },
+    remainHeight: { type: Number, default: window.innerHeight - 100 }
+  },
   watch: {
     content:{
       handler (newVal) {
@@ -32,10 +28,20 @@ export default {
 	    immediate: true,
     }
   },
+  computed: {
+    newContent(){
+      try {
+        return (new Parser()).parse(this.content);
+      } catch (e) {
+        return 'Pickle parsed failed!';
+      }
+    }
+  },
   methods: {
-    getContent(){
-      return this.$refs.editor.getContent();
-    },
+    getContent() {
+      this.$message.error('Pickle is readonly now!');
+      return false;
+    }
   },
   mounted() {
     

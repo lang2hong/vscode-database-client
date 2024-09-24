@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- </textarea> -->
-    <el-input type='textarea' :autosize="autosize" :disabled="disabled" v-model='tempContent' @input="chanageValue()" :style="'height:'+ remainHeight+'px'"></el-input>
+    <el-input ref='editor' type='textarea' :autosize="autosize" :disabled="disabled" v-model='editContent' :style="'height:' + remainHeight + 'px'"></el-input>
   </div>
 </template>
 
@@ -24,19 +24,21 @@ export default {
   watch: {
     content:{
       handler (newVal) {
-        this.tempContent = objectUtil.bufToBinary(newVal);
+        this.editContent = objectUtil.bufToBinary(newVal);
       },
       deep: true,
 	    immediate: true,
     }
   },
   computed:{
-
   },
   methods: {
+    getContent() {
+      return objectUtil.binaryStringToBuffer(this.editContent);
+    },
   },
   mounted() {
-    // console.log("ViewerText content",this.content);
+    this.editContent = objectUtil.bufToBinary(this.content);;
   },
 };
 </script>

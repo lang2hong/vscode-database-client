@@ -1,3 +1,4 @@
+import { Console } from "@/common/Console";
 import { CodeCommand, Constants, ModelType, RedisType } from "@/common/constants";
 import { Util } from "@/common/util";
 import { ViewManager } from "@/common/viewManager";
@@ -63,6 +64,7 @@ export default class KeyNode extends RedisBaseNode {
                 break;
             case RedisType.list:
                 content = await client.lrange(this.label, 0, await client.llen(this.label))
+                Console.log(content);
                 break;
             case RedisType.set:
                 content = await client.smembers(this.label)

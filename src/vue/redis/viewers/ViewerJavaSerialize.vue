@@ -1,49 +1,55 @@
 <template>
   <div>
-    
-    <ViewerJson :disabled="disabled" :content='newContent' :remainHeight="remainHeight"></ViewerJson>
+    <JsonEditor ref='editor' :content='newContent' :readOnly='disabled||false' :remainHeight="remainHeight"></JsonEditor>
   </div>
 </template>
 
-<script>
-import ViewerJson from '@/vue/redis/viewers/ViewerJson.vue';
+ <script type="text/javascript">
+import JsonEditor from '@/vue/redis/JsonEditor.vue';
 import { ObjectInputStream } from 'java-object-serialization';
 const JSONbig = require('@qii404/json-bigint')({ useNativeBigInt: false });
 export default {
   data() {
     return {
-      newContent:{}|null|''
     };
   },
   components: {
-		ViewerJson,
+		JsonEditor,
 	},
   props: {
     content: { default: () => Buffer.from('') },
-    disabled: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: true },
     remainHeight: { type: Number, default: window.innerHeight - 100 }
   },
   watch: {
     content:{
       handler (newVal) {
-        try {
-          const result = (new ObjectInputStream(newVal)).readObject();
-          if (typeof result !== 'object') {
-            this.newContent = result;
-            return;
-          }
-          const fields = Array.from(result.fields, ([key, value]) => ({ [key]: value }));
-          this.newContent =JSONbig.stringify({ ...result, fields });
-        } catch (e) {
-          console.log("Java unserialize failed!",e);
-          this.newContent = newVal;
-        }
       },
       deep: true,
 	    immediate: true,
     }
   },
+  computed: {
+    newContent(){
+      try {
+          const result = (new ObjectInputStream(this.content)).readObject();
+          if (typeof result !== 'object') {
+            return result;
+          }
+          const fields = Array.from(result.fields, ([key, value]) => ({ [key]: value }));
+          return JSONbig.stringify({ ...result, fields });
+        } catch (e) {
+          console.log("Java unserialize failed!",e);
+          this.$message.error("Java unserialize failed!");
+          return "Java unserialize failed";
+        }
+    }
+  },
   methods: {
+    getContent() {
+      this.$message.error('Java unserialization is readonly now!');
+      return false;
+    }
   },
   mounted() {
     

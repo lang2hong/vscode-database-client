@@ -5,7 +5,6 @@
 			:content='newContent' 
 			:name="viewerComponent" 
 			:remainHeight="remainHeight"
-			@changeValue="changeValue"
 			>
 		</component>
 	</div>
@@ -17,6 +16,14 @@ import ViewerText from '@/vue/redis/viewers/ViewerText.vue';
 import ViewerJavaSerialize from '@/vue/redis/viewers/ViewerJavaSerialize.vue';
 import ViewerHex from '@/vue/redis/viewers/ViewerHex.vue';
 import ViewerBinary from '@/vue/redis/viewers/ViewerBinary.vue';
+import ViewerBrotli from '@/vue/redis/viewers/ViewerBrotli.vue';
+import ViewerDeflate from '@/vue/redis/viewers/ViewerDeflate.vue';
+import ViewerDeflateRaw from '@/vue/redis/viewers/ViewerDeflateRaw.vue';
+import ViewerGzip from '@/vue/redis/viewers/ViewerGzip.vue';
+import ViewerPHPSerialize from '@/vue/redis/viewers/ViewerPHPSerialize.vue';
+// import ViewerPickle from '@/vue/redis/viewers/ViewerPickle.vue';
+// import ViewerProtobuf from '@/vue/redis/viewers/ViewerProtobuf.vue';
+
 import { objectUtil } from "@/vue/util/objectUtil";
 export default {
 	data() {
@@ -35,7 +42,14 @@ export default {
 		ViewerJson,
 		ViewerJavaSerialize,
 		ViewerHex,
-		ViewerBinary
+		ViewerBinary,
+		ViewerBrotli,
+		ViewerDeflate,
+		ViewerDeflateRaw,
+		ViewerGzip,
+		ViewerPHPSerialize,
+		// ViewerPickle,
+		// ViewerProtobuf,
 	},
 	
 	watch: {
@@ -56,8 +70,11 @@ export default {
 		}
 	},
 	methods: {
-		changeValue(value){
-			this.$emit("changeValue",value);
+		getContent() {
+			if (typeof this.$refs.viewer.getContent === 'function') {
+				return this.$refs.viewer.getContent();
+			}
+			return this.content;
 		},
 		changeViewer(value){
 			this.$emit("changeSelectedView",value);
@@ -81,9 +98,9 @@ export default {
 				return this.changeViewer('ViewerJavaSerialize');
 			}
 			// pickle
-			if (objectUtil.isPickle(this.newContent)) {
-				return this.changeViewer('ViewerPickle');
-			}
+			// if (objectUtil.isPickle(this.newContent)) {
+			// 	return this.changeViewer('ViewerPickle');
+			// }
 			// msgpack
 			if (objectUtil.isMsgpack(this.newContent)) {
 				return this.changeViewer('ViewerMsgpack');
@@ -101,9 +118,9 @@ export default {
 				return this.changeViewer('ViewerDeflate');
 			}
 			// protobuf
-			if (objectUtil.isProtobuf(this.newContent)) {
-				return this.changeViewer('ViewerProtobuf');
-			}
+			// if (objectUtil.isProtobuf(this.newContent)) {
+			// 	return this.changeViewer('ViewerProtobuf');
+			// }
 			// deflateRaw
 			if (objectUtil.isDeflateRaw(this.newContent)) {
 				return this.changeViewer('ViewerDeflateRaw');
@@ -113,7 +130,7 @@ export default {
 			if (!objectUtil.bufVisible(this.newContent)) {
 				return this.changeViewer('ViewerHex');
 			}
-
+			
 			return this.changeViewer('ViewerText');
 		}
 	},
