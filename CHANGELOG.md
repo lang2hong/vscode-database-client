@@ -1,5 +1,11 @@
 # CHANGELOG
 
+# 0.0.4 2024-9-24 
+
+- redis value formart
+
+fork from [vscode-database-client](https://github.com/cweijan/vscode-database-client)
+
 # 4.5.7 2022-2-6
 
 - Support connect to redis with username.

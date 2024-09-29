@@ -2,7 +2,7 @@
 	"name": "db-client",
 	"displayName": "DB Client",
 	"description": "DataBase Client Tool",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
 	"license": "MIT",
@@ -86,7 +86,7 @@
 				},
 				{
 					"id": "github-lang2hong-nosql",
-					"title": "Redis",
+					"title": "NoSQL",
 					"icon": "resources/image/other-container.png"
 				}
 			]
