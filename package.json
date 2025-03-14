@@ -2,7 +2,7 @@
 	"name": "db-client",
 	"displayName": "DB Client",
 	"description": "DataBase Client Tool",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
 	"license": "MIT",
@@ -18,7 +18,10 @@
 		"MySQL",
 		"Database",
 		"Postgresql",
-		"Redis"
+		"Redis",
+		"mysql",
+		"database",
+		"数据库"
 	],
 	"bugs": {
 		"url": "https://github.com/lang2hong/vscode-database-client/issues",
