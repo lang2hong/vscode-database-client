@@ -2,7 +2,7 @@
 	"name": "db-client",
 	"displayName": "DB Client",
 	"description": "DataBase Client Tool",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"publisher": "lang2hong",
 	"icon": "resources/logo.png",
 	"license": "MIT",

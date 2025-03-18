@@ -1,7 +1,9 @@
 # CHANGELOG
 
-# 0.0.4 2024-9-24 
+# 0.0.6 2025-3-18
+- replace logo
 
+# 0.0.4 2024-9-24 
 - redis value formart
 
 fork from [vscode-database-client](https://github.com/cweijan/vscode-database-client)
